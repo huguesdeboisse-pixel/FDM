@@ -6,15 +6,17 @@
   <title>Feuille de Messe</title>
   <style>
     :root {
-      --violet: #6b4ea2;
-      --vert: #2f6b3b;
-      --or: #b08d2f;
-      --rouge: #9f1d20;
-      --fond: #f7f5f1;
-      --carte: #ffffff;
-      --texte: #1f1f1f;
-      --bordure: #d9d4ca;
-      --ombre: 0 8px 24px rgba(0, 0, 0, 0.08);
+      --bg: #f6f3ee;
+      --panel: #ffffff;
+      --panel-soft: #fbfaf8;
+      --border: #ded7cb;
+      --text: #1f1f1f;
+      --muted: #6e6a63;
+      --accent: #7a0f1d;
+      --accent-soft: #f3e8ea;
+      --selected: #ece8e1;
+      --shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+      --radius: 18px;
     }
 
     * {
@@ -24,364 +26,645 @@
     body {
       margin: 0;
       font-family: Georgia, "Times New Roman", serif;
-      background: var(--fond);
-      color: var(--texte);
+      background: var(--bg);
+      color: var(--text);
     }
 
-    header {
-      padding: 20px 24px;
-      background: white;
-      border-bottom: 1px solid var(--bordure);
-      position: sticky;
-      top: 0;
-      z-index: 20;
+    button,
+    input,
+    select {
+      font: inherit;
     }
 
-    h1 {
-      margin: 0;
-      font-size: 1.8rem;
+    .page {
+      min-height: 100vh;
+      padding: 18px;
     }
 
-    .subtitle {
-      margin-top: 6px;
-      color: #666;
-      font-size: 0.95rem;
-    }
-
-    main {
+    .layout {
       display: grid;
-      grid-template-columns: 320px 1fr 420px;
-      gap: 20px;
-      padding: 20px;
+      grid-template-columns: 320px minmax(0, 1fr) 360px;
+      gap: 18px;
       align-items: start;
     }
 
     .panel {
-      background: var(--carte);
-      border: 1px solid var(--bordure);
-      border-radius: 16px;
-      box-shadow: var(--ombre);
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .panel-inner {
       padding: 18px;
     }
 
-    .panel h2 {
-      margin-top: 0;
-      margin-bottom: 16px;
-      font-size: 1.2rem;
+    .site-title {
+      margin: 0;
+      font-size: 2rem;
+      line-height: 1.1;
     }
 
-    .field {
-      margin-bottom: 14px;
+    .site-quote {
+      margin: 12px 0 0;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.98rem;
     }
 
-    .field label {
+    .site-quote strong {
       display: block;
-      font-weight: bold;
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .section-block + .section-block {
+      margin-top: 18px;
+      padding-top: 18px;
+      border-top: 1px solid var(--border);
+    }
+
+    .field-label {
+      display: block;
+      font-weight: 700;
       margin-bottom: 6px;
     }
 
-    .field input,
-    .field select,
-    .field button {
+    .field-help {
+      display: block;
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin-bottom: 8px;
+      line-height: 1.35;
+    }
+
+    .text-input,
+    .select-input {
       width: 100%;
-      padding: 10px 12px;
-      border: 1px solid var(--bordure);
-      border-radius: 10px;
-      font: inherit;
-      background: white;
+      padding: 11px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      outline: none;
     }
 
-    .primary-button {
-      background: var(--rouge);
-      color: white;
+    .text-input:focus,
+    .select-input:focus {
+      border-color: var(--accent);
+    }
+
+    .choice-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .chip-button {
+      border: 1px solid var(--border);
+      background: var(--panel-soft);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 9px 14px;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .chip-button.active {
+      background: var(--accent-soft);
+      border-color: var(--accent);
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .mini-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 7px 11px;
+      background: var(--panel-soft);
+      margin: 4px 6px 0 0;
+      font-size: 0.93rem;
+    }
+
+    .mini-chip button {
       border: none;
+      background: transparent;
       cursor: pointer;
-      font-weight: bold;
+      font-size: 0.95rem;
+      padding: 0;
+      line-height: 1;
     }
 
-    .secondary-button {
+    .small-button,
+    .ghost-button,
+    .accent-button,
+    .icon-button {
+      cursor: pointer;
+      border-radius: 12px;
+      transition: 0.2s ease;
+    }
+
+    .small-button,
+    .ghost-button,
+    .accent-button {
+      border: 1px solid var(--border);
+      background: var(--panel-soft);
+      color: var(--text);
+      padding: 10px 12px;
+    }
+
+    .ghost-button {
+      background: transparent;
+    }
+
+    .accent-button {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    .icon-button {
+      border: 1px solid var(--border);
       background: white;
-      cursor: pointer;
+      width: 38px;
+      height: 38px;
+      display: inline-grid;
+      place-items: center;
+      font-size: 1rem;
     }
 
-    .section-block {
-      border: 1px solid var(--bordure);
+    .sommaire-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .sommaire-item {
+      width: 100%;
+      text-align: left;
+      border: 1px solid var(--border);
+      background: var(--panel-soft);
       border-radius: 14px;
-      padding: 14px;
-      margin-bottom: 16px;
-      background: #fcfbf8;
+      padding: 12px 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .sommaire-item.current {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .sommaire-item.completed .sommaire-state {
+      color: var(--accent);
+      font-weight: 700;
     }
 
     .section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 10px;
+      padding: 18px 18px 0;
     }
 
     .section-title {
       margin: 0;
-      font-size: 1.05rem;
+      font-size: 1.75rem;
+      line-height: 1.15;
     }
 
-    .section-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .small-button {
-      padding: 8px 10px;
-      border: 1px solid var(--bordure);
-      border-radius: 10px;
-      background: white;
-      cursor: pointer;
-      font: inherit;
-    }
-
-    .search-input {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1px solid var(--bordure);
-      border-radius: 10px;
-      margin-bottom: 10px;
-      font: inherit;
-    }
-
-    .results-list,
-    .suggestions-list,
-    .selected-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .chant-card {
-      border: 1px solid var(--bordure);
-      border-radius: 12px;
-      padding: 10px 12px;
-      background: white;
-      cursor: pointer;
-    }
-
-    .chant-card:hover {
-      background: #f7f7f7;
-    }
-
-    .chant-title {
-      font-weight: bold;
-      margin-bottom: 4px;
-    }
-
-    .chant-meta {
-      font-size: 0.9rem;
-      color: #666;
-    }
-
-    .empty-state {
-      color: #777;
-      font-style: italic;
-      padding: 6px 0;
+    .liturgical-line {
+      margin-top: 8px;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 0.96rem;
     }
 
     .liturgical-badge {
       display: inline-block;
-      padding: 6px 10px;
+      margin-top: 10px;
+      padding: 8px 12px;
+      background: var(--panel-soft);
+      border: 1px solid var(--border);
       border-radius: 999px;
-      font-size: 0.85rem;
-      font-weight: bold;
-      color: white;
-      background: var(--vert);
-      margin-bottom: 12px;
+      font-size: 0.92rem;
+      color: var(--muted);
     }
 
-    .sheet-preview {
-      min-height: 500px;
-      border: 1px dashed var(--bordure);
-      border-radius: 14px;
-      padding: 16px;
-      background: #fffdfa;
+    .section-content {
+      padding: 18px;
+      position: relative;
+    }
+
+    .search-row {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .search-overlay {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      z-index: 20;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      max-height: 360px;
+      overflow-y: auto;
+    }
+
+    .search-overlay-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--border);
+      color: var(--muted);
+      font-size: 0.95rem;
+      background: var(--panel-soft);
+    }
+
+    .search-result-button {
+      width: 100%;
+      border: none;
+      background: white;
+      text-align: left;
+      padding: 12px 14px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0ebe2;
+    }
+
+    .search-result-button:last-child {
+      border-bottom: none;
+    }
+
+    .search-result-button:hover {
+      background: #faf7f2;
+    }
+
+    .actions-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      margin-bottom: 14px;
+      gap: 10px;
+    }
+
+    .cards-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .chant-card {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      background: white;
+      overflow: hidden;
+      transition: 0.2s ease;
+    }
+
+    .chant-card.selected {
+      background: var(--selected);
+      border-color: #b4aa9a;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+    }
+
+    .chant-card-main {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 14px 14px 16px;
+    }
+
+    .chant-main-button {
+      flex: 1;
+      text-align: left;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      padding: 0;
+      min-width: 0;
+    }
+
+    .chant-title {
+      font-size: 1.02rem;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    .chant-meta {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    .heart-button {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 1.35rem;
+      line-height: 1;
+      color: #181818;
+      padding: 0 2px;
+    }
+
+    .heart-button.liked {
+      color: var(--accent);
+    }
+
+    .toggle-select-button {
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 10px;
+      padding: 8px 10px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .chant-card.selected .toggle-select-button {
+      background: #f9f5ef;
+    }
+
+    .chant-preview {
+      border-top: 1px solid var(--border);
+      background: #fcfbf8;
+      padding: 14px 16px;
+      line-height: 1.55;
+      color: #333;
+    }
+
+    .chant-preview strong {
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .chant-preview p {
+      margin: 0 0 10px;
+      white-space: pre-wrap;
+    }
+
+    .chant-preview p:last-child {
+      margin-bottom: 0;
+    }
+
+    .section-footer-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 18px;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+
+    .sheet-header {
+      padding: 18px 18px 10px;
+      border-bottom: 1px solid var(--border);
+      background: var(--panel-soft);
     }
 
     .sheet-title {
-      text-align: center;
-      margin-top: 0;
-      margin-bottom: 6px;
+      margin: 0;
+      font-size: 1.35rem;
     }
 
-    .sheet-subtitle {
-      text-align: center;
-      color: #666;
-      margin-top: 0;
-      margin-bottom: 20px;
+    .sheet-meta {
+      margin-top: 10px;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 0.95rem;
+    }
+
+    .sheet-body {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
     }
 
     .sheet-section {
-      margin-bottom: 18px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      background: white;
     }
 
     .sheet-section h3 {
-      margin-bottom: 8px;
-      border-bottom: 1px solid var(--bordure);
-      padding-bottom: 4px;
+      margin: 0 0 10px;
+      font-size: 1rem;
     }
 
-    .footer-actions {
-      margin-top: 16px;
+    .sheet-empty {
+      color: var(--muted);
+      font-style: italic;
+      font-size: 0.95rem;
     }
 
-    @media (max-width: 1200px) {
-      main {
+    .sheet-item {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 8px 0;
+      border-top: 1px solid #f0ebe2;
+    }
+
+    .sheet-item:first-of-type {
+      border-top: none;
+      padding-top: 0;
+    }
+
+    .sheet-item-controls {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .sheet-download {
+      padding: 18px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .download-button {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      font-size: 1.6rem;
+      color: var(--accent);
+    }
+
+    .muted-note {
+      color: var(--muted);
+      font-size: 0.93rem;
+      line-height: 1.4;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .empty-state {
+      border: 1px dashed var(--border);
+      border-radius: 16px;
+      padding: 16px;
+      color: var(--muted);
+      background: #fcfbf8;
+    }
+
+    @media (max-width: 1180px) {
+      .layout {
         grid-template-columns: 1fr;
       }
     }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Feuille de Messe</h1>
-    <div class="subtitle">Génération de feuille de messe à partir de la date, du rite et des chants sélectionnés.</div>
-  </header>
+  <div class="page">
+    <div class="layout">
+      <aside class="panel" id="left-panel">
+        <div class="panel-inner">
+          <h1 class="site-title">Feuille de Messe</h1>
+          <div class="site-quote">
+            <strong>“Qui chante bien, deux fois prie”</strong>
+            Saint Augustin
+          </div>
 
-  <main>
-    <!-- COLONNE 1 : PARAMÈTRES -->
-    <section class="panel">
-      <h2>Paramètres</h2>
+          <div class="section-block">
+            <label class="field-label" for="date-input">Date de la messe</label>
+            <span class="field-help">(sert à déterminer le temps liturgique et la célébration du jour)</span>
+            <input class="text-input" type="date" id="date-input" />
+          </div>
 
-      <div class="field">
-        <label for="dateMesse">Date</label>
-        <input type="date" id="dateMesse" />
-      </div>
-
-      <div class="field">
-        <label for="riteMesse">Rite</label>
-        <select id="riteMesse">
-          <option value="R_ORDINAIRE">Rite ordinaire</option>
-          <option value="R_EXTRAORDINAIRE">Rite extraordinaire</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label for="tempsLiturgique">Temps liturgique</label>
-        <select id="tempsLiturgique">
-          <option value="T_ORDINAIRE">Temps ordinaire</option>
-          <option value="T_AVENT">Avent</option>
-          <option value="T_NOEL">Noël</option>
-          <option value="T_CAREME">Carême</option>
-          <option value="T_PAQUES">Pâques</option>
-          <option value="T_PENTECOTE">Pentecôte</option>
-          <option value="T_TOUS_TEMPS">Tous temps</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <label for="carnetChants">Carnet de chants</label>
-        <select id="carnetChants">
-          <option value="tous">Tous les chants</option>
-        </select>
-      </div>
-
-      <div class="field">
-        <button id="btnSommaire" class="secondary-button">Sommaire des chants</button>
-      </div>
-    </section>
-
-    <!-- COLONNE 2 : CHOIX DES CHANTS -->
-    <section class="panel">
-      <h2>Sélection des chants</h2>
-
-      <div id="sectionsMesse">
-        <div class="section-block" data-section="F_ENTREE">
-          <div class="section-header">
-            <h3 class="section-title">Entrée</h3>
-            <div class="section-actions">
-              <button class="small-button refresh-button">Rafraîchir</button>
+          <div class="section-block">
+            <span class="field-label">Rite</span>
+            <div class="choice-row">
+              <button class="chip-button" type="button" data-rite="ordinaire">Rite ordinaire</button>
+              <button class="chip-button" type="button" data-rite="extraordinaire">Rite extraordinaire</button>
             </div>
           </div>
-          <input class="search-input" type="text" placeholder="Rechercher un chant pour l'entrée" />
-          <div class="results-list"></div>
-          <div class="suggestions-list"></div>
-          <div class="selected-list"></div>
-        </div>
 
-        <div class="section-block" data-section="F_OFFRANDE">
-          <div class="section-header">
-            <h3 class="section-title">Offertoire</h3>
-            <div class="section-actions">
-              <button class="small-button refresh-button">Rafraîchir</button>
+          <div class="section-block">
+            <span class="field-label">Temps liturgique</span>
+            <div id="liturgical-summary" class="muted-note">Non déterminé pour l’instant.</div>
+          </div>
+
+          <div class="section-block">
+            <span class="field-label">Carnets de chants</span>
+            <input
+              class="text-input"
+              type="text"
+              id="carnet-search"
+              placeholder="Rechercher un carnet..."
+              autocomplete="off"
+            />
+            <div id="selected-carnets" style="margin-top: 10px;"></div>
+            <div id="carnets-results" class="sommaire-list" style="margin-top: 12px;"></div>
+            <div style="margin-top: 10px;">
+              <button type="button" class="ghost-button" id="clear-carnets-button">Utiliser toute la base</button>
             </div>
           </div>
-          <input class="search-input" type="text" placeholder="Rechercher un chant pour l'offertoire" />
-          <div class="results-list"></div>
-          <div class="suggestions-list"></div>
-          <div class="selected-list"></div>
-        </div>
 
-        <div class="section-block" data-section="F_COMMUNION">
-          <div class="section-header">
-            <h3 class="section-title">Communion</h3>
-            <div class="section-actions">
-              <button class="small-button refresh-button">Rafraîchir</button>
+          <div class="section-block">
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button type="button" class="small-button" id="toggle-favorites-button">Favoris</button>
+              <button type="button" class="small-button" id="report-issue-button">Signaler une erreur</button>
             </div>
           </div>
-          <input class="search-input" type="text" placeholder="Rechercher un chant pour la communion" />
-          <div class="results-list"></div>
-          <div class="suggestions-list"></div>
-          <div class="selected-list"></div>
+
+          <div class="section-block hidden" id="favorites-block">
+            <span class="field-label">Favoris</span>
+            <div id="favorites-content" class="muted-note">Aucun favori pour l’instant.</div>
+          </div>
+
+          <div class="section-block hidden" id="sections-nav-block">
+            <span class="field-label">Sections</span>
+            <div id="sections-nav" class="sommaire-list"></div>
+          </div>
+        </div>
+      </aside>
+
+      <main class="panel" id="main-panel">
+        <div class="section-header">
+          <h2 class="section-title" id="current-section-title">Choisissez d’abord une date et un rite</h2>
+          <div class="liturgical-line" id="current-section-subtitle">
+            La première section apparaîtra automatiquement ensuite.
+          </div>
+          <div class="liturgical-badge hidden" id="kyriale-badge"></div>
         </div>
 
-        <div class="section-block" data-section="F_ENVOI">
-          <div class="section-header">
-            <h3 class="section-title">Envoi</h3>
-            <div class="section-actions">
-              <button class="small-button refresh-button">Rafraîchir</button>
+        <div class="section-content" id="main-content">
+          <div class="empty-state" id="main-empty-state">
+            Commencez par choisir un rite. La date peut rester vide si vous le souhaitez.
+          </div>
+
+          <div class="hidden" id="section-workspace">
+            <div class="search-row">
+              <input
+                class="text-input"
+                type="text"
+                id="chant-search"
+                placeholder="Rechercher un chant..."
+                autocomplete="off"
+              />
+              <div class="search-overlay hidden" id="search-overlay">
+                <div class="search-overlay-header">
+                  <span id="search-overlay-label">Résultats</span>
+                  <button type="button" class="ghost-button" id="close-search-overlay">Fermer</button>
+                </div>
+                <div id="search-results"></div>
+              </div>
+            </div>
+
+            <div class="actions-row">
+              <button type="button" class="small-button" id="refresh-button">Rafraîchir</button>
+            </div>
+
+            <div class="cards-list" id="chants-list"></div>
+
+            <div class="section-footer-nav">
+              <button type="button" class="ghost-button" id="previous-section-button">Section précédente</button>
+              <button type="button" class="ghost-button" id="skip-section-button">Passer</button>
             </div>
           </div>
-          <input class="search-input" type="text" placeholder="Rechercher un chant pour l'envoi" />
-          <div class="results-list"></div>
-          <div class="suggestions-list"></div>
-          <div class="selected-list"></div>
         </div>
-      </div>
-    </section>
+      </main>
 
-    <!-- COLONNE 3 : FEUILLE -->
-    <section class="panel">
-      <h2>Feuille de messe</h2>
-
-      <div id="liturgicalBadge" class="liturgical-badge">Temps ordinaire</div>
-
-      <div class="sheet-preview" id="sheetPreview">
-        <h3 class="sheet-title">Feuille de Messe</h3>
-        <p class="sheet-subtitle" id="sheetDate">Date non renseignée</p>
-
-        <div class="sheet-section">
-          <h3>Entrée</h3>
-          <div id="sheetEntree" class="empty-state">Aucun chant sélectionné.</div>
+      <aside class="panel" id="sheet-panel">
+        <div class="sheet-header">
+          <h2 class="sheet-title">Feuille de messe</h2>
+          <div class="sheet-meta" id="sheet-meta">
+            La feuille se construira ici au fur et à mesure.
+          </div>
         </div>
 
-        <div class="sheet-section">
-          <h3>Offertoire</h3>
-          <div id="sheetOffrande" class="empty-state">Aucun chant sélectionné.</div>
+        <div class="sheet-body" id="sheet-body">
+          <div class="empty-state">
+            Aucun chant sélectionné pour l’instant.
+          </div>
         </div>
 
-        <div class="sheet-section">
-          <h3>Communion</h3>
-          <div id="sheetCommunion" class="empty-state">Aucun chant sélectionné.</div>
+        <div class="sheet-download">
+          <button type="button" class="download-button" id="download-button" title="Télécharger">
+            ⭳
+          </button>
         </div>
+      </aside>
+    </div>
+  </div>
 
-        <div class="sheet-section">
-          <h3>Envoi</h3>
-          <div id="sheetEnvoi" class="empty-state">Aucun chant sélectionné.</div>
-        </div>
-      </div>
-
-      <div class="footer-actions">
-        <button id="btnDownloadPdf" class="primary-button">Télécharger la feuille de messe</button>
-      </div>
-    </section>
-  </main>
-
-  <script type="module" src="./app.js"></script>
+  <script src="./app.js"></script>
 </body>
 </html>
