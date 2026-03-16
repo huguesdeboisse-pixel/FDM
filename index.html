@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Feuille de Messe</title>
+  <style>
+    :root {
+      --violet: #6b4ea2;
+      --vert: #2f6b3b;
+      --or: #b08d2f;
+      --rouge: #9f1d20;
+      --fond: #f7f5f1;
+      --carte: #ffffff;
+      --texte: #1f1f1f;
+      --bordure: #d9d4ca;
+      --ombre: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      background: var(--fond);
+      color: var(--texte);
+    }
+
+    header {
+      padding: 20px 24px;
+      background: white;
+      border-bottom: 1px solid var(--bordure);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+
+    .subtitle {
+      margin-top: 6px;
+      color: #666;
+      font-size: 0.95rem;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 320px 1fr 420px;
+      gap: 20px;
+      padding: 20px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--carte);
+      border: 1px solid var(--bordure);
+      border-radius: 16px;
+      box-shadow: var(--ombre);
+      padding: 18px;
+    }
+
+    .panel h2 {
+      margin-top: 0;
+      margin-bottom: 16px;
+      font-size: 1.2rem;
+    }
+
+    .field {
+      margin-bottom: 14px;
+    }
+
+    .field label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .field input,
+    .field select,
+    .field button {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--bordure);
+      border-radius: 10px;
+      font: inherit;
+      background: white;
+    }
+
+    .primary-button {
+      background: var(--rouge);
+      color: white;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .secondary-button {
+      background: white;
+      cursor: pointer;
+    }
+
+    .section-block {
+      border: 1px solid var(--bordure);
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 16px;
+      background: #fcfbf8;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: 1.05rem;
+    }
+
+    .section-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .small-button {
+      padding: 8px 10px;
+      border: 1px solid var(--bordure);
+      border-radius: 10px;
+      background: white;
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--bordure);
+      border-radius: 10px;
+      margin-bottom: 10px;
+      font: inherit;
+    }
+
+    .results-list,
+    .suggestions-list,
+    .selected-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .chant-card {
+      border: 1px solid var(--bordure);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: white;
+      cursor: pointer;
+    }
+
+    .chant-card:hover {
+      background: #f7f7f7;
+    }
+
+    .chant-title {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .chant-meta {
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    .empty-state {
+      color: #777;
+      font-style: italic;
+      padding: 6px 0;
+    }
+
+    .liturgical-badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      color: white;
+      background: var(--vert);
+      margin-bottom: 12px;
+    }
+
+    .sheet-preview {
+      min-height: 500px;
+      border: 1px dashed var(--bordure);
+      border-radius: 14px;
+      padding: 16px;
+      background: #fffdfa;
+    }
+
+    .sheet-title {
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 6px;
+    }
+
+    .sheet-subtitle {
+      text-align: center;
+      color: #666;
+      margin-top: 0;
+      margin-bottom: 20px;
+    }
+
+    .sheet-section {
+      margin-bottom: 18px;
+    }
+
+    .sheet-section h3 {
+      margin-bottom: 8px;
+      border-bottom: 1px solid var(--bordure);
+      padding-bottom: 4px;
+    }
+
+    .footer-actions {
+      margin-top: 16px;
+    }
+
+    @media (max-width: 1200px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Feuille de Messe</h1>
+    <div class="subtitle">Génération de feuille de messe à partir de la date, du rite et des chants sélectionnés.</div>
+  </header>
+
+  <main>
+    <!-- COLONNE 1 : PARAMÈTRES -->
+    <section class="panel">
+      <h2>Paramètres</h2>
+
+      <div class="field">
+        <label for="dateMesse">Date</label>
+        <input type="date" id="dateMesse" />
+      </div>
+
+      <div class="field">
+        <label for="riteMesse">Rite</label>
+        <select id="riteMesse">
+          <option value="R_ORDINAIRE">Rite ordinaire</option>
+          <option value="R_EXTRAORDINAIRE">Rite extraordinaire</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="tempsLiturgique">Temps liturgique</label>
+        <select id="tempsLiturgique">
+          <option value="T_ORDINAIRE">Temps ordinaire</option>
+          <option value="T_AVENT">Avent</option>
+          <option value="T_NOEL">Noël</option>
+          <option value="T_CAREME">Carême</option>
+          <option value="T_PAQUES">Pâques</option>
+          <option value="T_PENTECOTE">Pentecôte</option>
+          <option value="T_TOUS_TEMPS">Tous temps</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="carnetChants">Carnet de chants</label>
+        <select id="carnetChants">
+          <option value="tous">Tous les chants</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <button id="btnSommaire" class="secondary-button">Sommaire des chants</button>
+      </div>
+    </section>
+
+    <!-- COLONNE 2 : CHOIX DES CHANTS -->
+    <section class="panel">
+      <h2>Sélection des chants</h2>
+
+      <div id="sectionsMesse">
+        <div class="section-block" data-section="F_ENTREE">
+          <div class="section-header">
+            <h3 class="section-title">Entrée</h3>
+            <div class="section-actions">
+              <button class="small-button refresh-button">Rafraîchir</button>
+            </div>
+          </div>
+          <input class="search-input" type="text" placeholder="Rechercher un chant pour l'entrée" />
+          <div class="results-list"></div>
+          <div class="suggestions-list"></div>
+          <div class="selected-list"></div>
+        </div>
+
+        <div class="section-block" data-section="F_OFFRANDE">
+          <div class="section-header">
+            <h3 class="section-title">Offertoire</h3>
+            <div class="section-actions">
+              <button class="small-button refresh-button">Rafraîchir</button>
+            </div>
+          </div>
+          <input class="search-input" type="text" placeholder="Rechercher un chant pour l'offertoire" />
+          <div class="results-list"></div>
+          <div class="suggestions-list"></div>
+          <div class="selected-list"></div>
+        </div>
+
+        <div class="section-block" data-section="F_COMMUNION">
+          <div class="section-header">
+            <h3 class="section-title">Communion</h3>
+            <div class="section-actions">
+              <button class="small-button refresh-button">Rafraîchir</button>
+            </div>
+          </div>
+          <input class="search-input" type="text" placeholder="Rechercher un chant pour la communion" />
+          <div class="results-list"></div>
+          <div class="suggestions-list"></div>
+          <div class="selected-list"></div>
+        </div>
+
+        <div class="section-block" data-section="F_ENVOI">
+          <div class="section-header">
+            <h3 class="section-title">Envoi</h3>
+            <div class="section-actions">
+              <button class="small-button refresh-button">Rafraîchir</button>
+            </div>
+          </div>
+          <input class="search-input" type="text" placeholder="Rechercher un chant pour l'envoi" />
+          <div class="results-list"></div>
+          <div class="suggestions-list"></div>
+          <div class="selected-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COLONNE 3 : FEUILLE -->
+    <section class="panel">
+      <h2>Feuille de messe</h2>
+
+      <div id="liturgicalBadge" class="liturgical-badge">Temps ordinaire</div>
+
+      <div class="sheet-preview" id="sheetPreview">
+        <h3 class="sheet-title">Feuille de Messe</h3>
+        <p class="sheet-subtitle" id="sheetDate">Date non renseignée</p>
+
+        <div class="sheet-section">
+          <h3>Entrée</h3>
+          <div id="sheetEntree" class="empty-state">Aucun chant sélectionné.</div>
+        </div>
+
+        <div class="sheet-section">
+          <h3>Offertoire</h3>
+          <div id="sheetOffrande" class="empty-state">Aucun chant sélectionné.</div>
+        </div>
+
+        <div class="sheet-section">
+          <h3>Communion</h3>
+          <div id="sheetCommunion" class="empty-state">Aucun chant sélectionné.</div>
+        </div>
+
+        <div class="sheet-section">
+          <h3>Envoi</h3>
+          <div id="sheetEnvoi" class="empty-state">Aucun chant sélectionné.</div>
+        </div>
+      </div>
+
+      <div class="footer-actions">
+        <button id="btnDownloadPdf" class="primary-button">Télécharger la feuille de messe</button>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
