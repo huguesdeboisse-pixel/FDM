@@ -6,111 +6,135 @@
   <title>Feuille de Messe</title>
   <style>
     :root {
-      --bg: #f6f3ee;
-      --panel: #ffffff;
-      --panel-soft: #fbfaf8;
-      --border: #ded7cb;
-      --text: #1f1f1f;
-      --muted: #6e6a63;
-      --accent: #7a0f1d;
-      --accent-soft: #f3e8ea;
-      --selected: #ece8e1;
-      --shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
-      --radius: 18px;
+      --bg: #f5f3ef;
+      --panel: rgba(255, 255, 255, 0.82);
+      --panel-strong: rgba(255, 255, 255, 0.92);
+      --border: #ddd6ca;
+      --text: #181818;
+      --muted: #6c675f;
+      --accent: #7b1020;
+      --accent-soft: rgba(123, 16, 32, 0.08);
+      --selected: #ede8e1;
+      --shadow: 0 10px 28px rgba(0, 0, 0, 0.05);
+      --radius: 22px;
+      --radius-small: 14px;
     }
 
     * {
       box-sizing: border-box;
     }
 
+    html,
     body {
       margin: 0;
-      font-family: Georgia, "Times New Roman", serif;
+      padding: 0;
       background: var(--bg);
       color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
 
     button,
-    input,
-    select {
+    input {
       font: inherit;
     }
 
-    .page {
+    body {
       min-height: 100vh;
-      padding: 18px;
     }
 
-    .layout {
-      display: grid;
-      grid-template-columns: 320px minmax(0, 1fr) 360px;
-      gap: 18px;
-      align-items: start;
+    .app-shell {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 20px 22px 24px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 18px;
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: 2.35rem;
+      line-height: 1;
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .brand p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.35;
+      font-size: 0.98rem;
+    }
+
+    .brand p strong {
+      color: var(--text);
+      font-weight: 600;
+      display: block;
     }
 
     .panel {
       background: var(--panel);
+      backdrop-filter: blur(10px);
       border: 1px solid var(--border);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
-      overflow: hidden;
     }
 
-    .panel-inner {
-      padding: 18px;
+    .screen-1 {
+      max-width: 780px;
+      margin: 34px auto 0;
+      padding: 22px;
     }
 
-    .site-title {
-      margin: 0;
-      font-size: 2rem;
-      line-height: 1.1;
+    .screen-1-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
     }
 
-    .site-quote {
-      margin: 12px 0 0;
-      color: var(--muted);
-      line-height: 1.5;
-      font-size: 0.98rem;
+    .screen-1-full {
+      grid-column: 1 / -1;
     }
 
-    .site-quote strong {
-      display: block;
-      color: var(--text);
-      font-weight: 600;
-    }
-
-    .section-block + .section-block {
-      margin-top: 18px;
-      padding-top: 18px;
-      border-top: 1px solid var(--border);
+    .field-card {
+      background: var(--panel-strong);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px;
     }
 
     .field-label {
       display: block;
       font-weight: 700;
-      margin-bottom: 6px;
+      font-size: 0.98rem;
+      margin-bottom: 5px;
     }
 
     .field-help {
       display: block;
       color: var(--muted);
-      font-size: 0.92rem;
-      margin-bottom: 8px;
+      font-size: 0.88rem;
       line-height: 1.35;
+      margin-bottom: 10px;
     }
 
-    .text-input,
-    .select-input {
+    .text-input {
       width: 100%;
-      padding: 11px 12px;
-      border-radius: 12px;
       border: 1px solid var(--border);
       background: #fff;
+      border-radius: 14px;
+      padding: 11px 13px;
       outline: none;
+      font-size: 0.96rem;
     }
 
-    .text-input:focus,
-    .select-input:focus {
+    .text-input:focus {
       border-color: var(--accent);
     }
 
@@ -122,17 +146,21 @@
 
     .chip-button {
       border: 1px solid var(--border);
-      background: var(--panel-soft);
-      color: var(--text);
+      background: #fff;
       border-radius: 999px;
-      padding: 9px 14px;
+      padding: 10px 14px;
       cursor: pointer;
-      transition: 0.2s ease;
+      transition: 0.18s ease;
+      font-size: 0.95rem;
+    }
+
+    .chip-button:hover {
+      transform: translateY(-1px);
     }
 
     .chip-button.active {
-      background: var(--accent-soft);
       border-color: var(--accent);
+      background: var(--accent-soft);
       color: var(--accent);
       font-weight: 700;
     }
@@ -140,131 +168,163 @@
     .mini-chip {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
+      gap: 7px;
       border: 1px solid var(--border);
       border-radius: 999px;
-      padding: 7px 11px;
-      background: var(--panel-soft);
+      padding: 6px 10px;
+      background: #fff;
       margin: 4px 6px 0 0;
-      font-size: 0.93rem;
+      font-size: 0.88rem;
     }
 
     .mini-chip button {
       border: none;
       background: transparent;
+      padding: 0;
       cursor: pointer;
       font-size: 0.95rem;
-      padding: 0;
       line-height: 1;
     }
 
-    .small-button,
-    .ghost-button,
-    .accent-button,
-    .icon-button {
-      cursor: pointer;
-      border-radius: 12px;
-      transition: 0.2s ease;
-    }
-
-    .small-button,
-    .ghost-button,
-    .accent-button {
-      border: 1px solid var(--border);
-      background: var(--panel-soft);
-      color: var(--text);
-      padding: 10px 12px;
-    }
-
-    .ghost-button {
-      background: transparent;
-    }
-
-    .accent-button {
-      background: var(--accent);
-      border-color: var(--accent);
-      color: white;
-    }
-
-    .icon-button {
-      border: 1px solid var(--border);
-      background: white;
-      width: 38px;
-      height: 38px;
-      display: inline-grid;
-      place-items: center;
-      font-size: 1rem;
-    }
-
-    .sommaire-list {
+    .carnets-results {
       display: flex;
       flex-direction: column;
       gap: 8px;
-      margin-top: 12px;
+      margin-top: 10px;
+      max-height: 220px;
+      overflow-y: auto;
+      padding-right: 2px;
     }
 
-    .sommaire-item {
+    .carnet-item {
       width: 100%;
-      text-align: left;
       border: 1px solid var(--border);
-      background: var(--panel-soft);
+      background: #fff;
       border-radius: 14px;
-      padding: 12px 14px;
+      padding: 10px 12px;
       cursor: pointer;
       display: flex;
-      align-items: center;
       justify-content: space-between;
       gap: 10px;
+      text-align: left;
+      font-size: 0.93rem;
     }
 
-    .sommaire-item.current {
+    .carnet-item.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .small-note {
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+
+    .workspace {
+      display: none;
+      grid-template-columns: 250px minmax(0, 1fr) 500px;
+      gap: 16px;
+      align-items: start;
+      margin-top: 10px;
+    }
+
+    .workspace.active {
+      display: grid;
+    }
+
+    .column {
+      min-height: 70vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .column .panel-inner {
+      padding: 16px;
+    }
+
+    .column-left .panel-inner,
+    .column-center .panel-inner,
+    .column-right .panel-inner {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+
+    .subsection + .subsection {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #e8e1d7;
+    }
+
+    .subsection-title {
+      margin: 0 0 8px;
+      font-weight: 700;
+      font-size: 0.98rem;
+    }
+
+    .nav-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .nav-item {
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 14px;
+      padding: 10px 12px;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      font-size: 0.92rem;
+    }
+
+    .nav-item.current {
       border-color: var(--accent);
       background: var(--accent-soft);
       color: var(--accent);
       font-weight: 700;
     }
 
-    .sommaire-item.completed .sommaire-state {
-      color: var(--accent);
-      font-weight: 700;
-    }
-
-    .section-header {
-      padding: 18px 18px 0;
-    }
-
     .section-title {
       margin: 0;
-      font-size: 1.75rem;
-      line-height: 1.15;
+      font-size: 1.65rem;
+      line-height: 1.1;
+      font-family: Georgia, "Times New Roman", serif;
     }
 
-    .liturgical-line {
-      margin-top: 8px;
+    .section-subtitle {
+      margin: 8px 0 14px;
       color: var(--muted);
       line-height: 1.45;
-      font-size: 0.96rem;
-    }
-
-    .liturgical-badge {
-      display: inline-block;
-      margin-top: 10px;
-      padding: 8px 12px;
-      background: var(--panel-soft);
-      border: 1px solid var(--border);
-      border-radius: 999px;
       font-size: 0.92rem;
-      color: var(--muted);
     }
 
-    .section-content {
-      padding: 18px;
-      position: relative;
+    .kyriale-badge {
+      display: inline-block;
+      align-self: flex-start;
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 999px;
+      padding: 7px 11px;
+      color: var(--muted);
+      font-size: 0.84rem;
+      margin-bottom: 14px;
+    }
+
+    .hidden {
+      display: none !important;
     }
 
     .search-row {
       position: relative;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
     .search-overlay {
@@ -272,40 +332,35 @@
       top: calc(100% + 8px);
       left: 0;
       right: 0;
-      z-index: 20;
-      background: white;
+      z-index: 50;
+      background: rgba(255, 255, 255, 0.98);
       border: 1px solid var(--border);
-      border-radius: 16px;
+      border-radius: 18px;
       box-shadow: var(--shadow);
-      overflow: hidden;
-      max-height: 360px;
+      max-height: 340px;
       overflow-y: auto;
+      backdrop-filter: blur(8px);
     }
 
     .search-overlay-header {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      padding: 12px 14px;
-      border-bottom: 1px solid var(--border);
+      gap: 10px;
+      align-items: center;
+      padding: 11px 13px;
+      border-bottom: 1px solid #ece5db;
       color: var(--muted);
-      font-size: 0.95rem;
-      background: var(--panel-soft);
+      font-size: 0.88rem;
     }
 
     .search-result-button {
       width: 100%;
       border: none;
-      background: white;
+      background: transparent;
       text-align: left;
-      padding: 12px 14px;
+      padding: 11px 13px;
       cursor: pointer;
-      border-bottom: 1px solid #f0ebe2;
-    }
-
-    .search-result-button:last-child {
-      border-bottom: none;
+      border-bottom: 1px solid #f1ece3;
     }
 
     .search-result-button:hover {
@@ -314,68 +369,82 @@
 
     .actions-row {
       display: flex;
-      align-items: center;
       justify-content: flex-end;
-      margin-bottom: 14px;
-      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .plain-button,
+    .ghost-button {
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text);
+      border-radius: 12px;
+      padding: 9px 11px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    .ghost-button {
+      background: transparent;
     }
 
     .cards-list {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 10px;
+      flex: 1;
     }
 
     .chant-card {
       border: 1px solid var(--border);
-      border-radius: 16px;
-      background: white;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.94);
       overflow: hidden;
-      transition: 0.2s ease;
+      transition: 0.18s ease;
     }
 
     .chant-card.selected {
       background: var(--selected);
-      border-color: #b4aa9a;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.8);
+      border-color: #c6baaa;
     }
 
     .chant-card-main {
-      display: flex;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
       align-items: center;
-      gap: 12px;
-      padding: 14px 14px 14px 16px;
+      padding: 12px 14px;
     }
 
     .chant-main-button {
-      flex: 1;
-      text-align: left;
       border: none;
       background: transparent;
-      cursor: pointer;
+      text-align: left;
       padding: 0;
+      cursor: pointer;
       min-width: 0;
     }
 
     .chant-title {
-      font-size: 1.02rem;
+      font-size: 0.97rem;
       line-height: 1.35;
       word-break: break-word;
+      font-weight: 600;
     }
 
     .chant-meta {
-      margin-top: 6px;
       color: var(--muted);
-      font-size: 0.88rem;
+      font-size: 0.82rem;
+      margin-top: 5px;
+      line-height: 1.35;
     }
 
     .heart-button {
       border: none;
       background: transparent;
       cursor: pointer;
-      font-size: 1.35rem;
-      line-height: 1;
-      color: #181818;
+      font-size: 1.2rem;
+      color: #1b1b1b;
       padding: 0 2px;
     }
 
@@ -385,23 +454,21 @@
 
     .toggle-select-button {
       border: 1px solid var(--border);
-      background: white;
+      background: #fff;
       border-radius: 10px;
       padding: 8px 10px;
       cursor: pointer;
-      flex-shrink: 0;
-    }
-
-    .chant-card.selected .toggle-select-button {
-      background: #f9f5ef;
+      font-size: 0.85rem;
+      white-space: nowrap;
     }
 
     .chant-preview {
-      border-top: 1px solid var(--border);
-      background: #fcfbf8;
-      padding: 14px 16px;
-      line-height: 1.55;
+      border-top: 1px solid #e7e0d5;
+      background: #faf8f4;
+      padding: 12px 14px;
       color: #333;
+      line-height: 1.55;
+      font-size: 0.92rem;
     }
 
     .chant-preview strong {
@@ -412,63 +479,77 @@
     .chant-preview p {
       margin: 0 0 10px;
       white-space: pre-wrap;
+      font-weight: 300;
     }
 
     .chant-preview p:last-child {
       margin-bottom: 0;
     }
 
-    .section-footer-nav {
+    .center-footer {
+      margin-top: 14px;
       display: flex;
-      align-items: center;
+      align-items: flex-end;
       justify-content: space-between;
-      gap: 12px;
-      margin-top: 18px;
-      padding-top: 14px;
-      border-top: 1px solid var(--border);
+      gap: 10px;
+    }
+
+    .favorites-trigger {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      border: none;
+      background: transparent;
+      color: var(--accent);
+      cursor: pointer;
+      padding: 0;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .favorites-trigger .heart-solid {
+      font-size: 1.15rem;
+      line-height: 1;
     }
 
     .sheet-header {
-      padding: 18px 18px 10px;
-      border-bottom: 1px solid var(--border);
-      background: var(--panel-soft);
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid #e7e0d5;
     }
 
     .sheet-title {
       margin: 0;
-      font-size: 1.35rem;
+      font-size: 1.9rem;
+      line-height: 1.05;
+      font-family: Georgia, "Times New Roman", serif;
     }
 
     .sheet-meta {
-      margin-top: 10px;
+      margin-top: 8px;
       color: var(--muted);
-      line-height: 1.5;
-      font-size: 0.95rem;
+      line-height: 1.45;
+      font-size: 0.9rem;
     }
 
     .sheet-body {
-      padding: 18px;
+      padding: 16px 18px 76px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
+      gap: 14px;
+      flex: 1;
+      min-height: 620px;
     }
 
     .sheet-section {
       border: 1px solid var(--border);
       border-radius: 16px;
-      padding: 14px;
-      background: white;
+      background: rgba(255,255,255,0.96);
+      padding: 12px;
     }
 
     .sheet-section h3 {
-      margin: 0 0 10px;
-      font-size: 1rem;
-    }
-
-    .sheet-empty {
-      color: var(--muted);
-      font-style: italic;
-      font-size: 0.95rem;
+      margin: 0 0 8px;
+      font-size: 0.98rem;
     }
 
     .sheet-item {
@@ -477,7 +558,8 @@
       gap: 10px;
       align-items: center;
       padding: 8px 0;
-      border-top: 1px solid #f0ebe2;
+      border-top: 1px solid #eee7dc;
+      font-size: 0.92rem;
     }
 
     .sheet-item:first-of-type {
@@ -491,158 +573,253 @@
       align-items: center;
     }
 
-    .sheet-download {
-      padding: 18px;
-      border-top: 1px solid var(--border);
+    .icon-button {
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+
+    .sheet-empty {
+      border: 1px dashed var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      background: rgba(255,255,255,0.7);
+      color: var(--muted);
+      font-size: 0.93rem;
+    }
+
+    .right-actions {
+      position: absolute;
+      right: 16px;
+      bottom: 14px;
       display: flex;
-      justify-content: flex-end;
+      align-items: flex-end;
+      gap: 14px;
     }
 
     .download-button {
       border: none;
       background: transparent;
-      cursor: pointer;
-      font-size: 1.6rem;
       color: var(--accent);
+      cursor: pointer;
+      font-size: 1.45rem;
+      line-height: 1;
+      padding: 0;
     }
 
-    .muted-note {
-      color: var(--muted);
+    .issue-button {
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      padding: 0;
+      width: 46px;
+      height: 46px;
+      display: inline-grid;
+      place-items: center;
+    }
+
+    .issue-button svg {
+      width: 42px;
+      height: 42px;
+      stroke: #111;
+      fill: none;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .favorites-panel {
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.92);
+      border-radius: 16px;
+      padding: 12px;
+      font-size: 0.9rem;
+    }
+
+    .favorites-panel h4 {
+      margin: 0 0 10px;
       font-size: 0.93rem;
+    }
+
+    .favorite-group + .favorite-group {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #eee7dc;
+    }
+
+    .favorite-group-title {
+      font-weight: 700;
+      margin-bottom: 5px;
+      font-size: 0.88rem;
+    }
+
+    .favorite-item {
+      color: var(--muted);
+      font-size: 0.88rem;
       line-height: 1.4;
     }
 
-    .hidden {
-      display: none !important;
-    }
-
-    .empty-state {
-      border: 1px dashed var(--border);
-      border-radius: 16px;
-      padding: 16px;
+    .top-right-info {
       color: var(--muted);
-      background: #fcfbf8;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      margin-top: 4px;
+      text-align: right;
     }
 
-    @media (max-width: 1180px) {
-      .layout {
+    @media (max-width: 1280px) {
+      .workspace.active {
+        grid-template-columns: 230px minmax(0, 1fr) 420px;
+      }
+    }
+
+    @media (max-width: 1100px) {
+      .workspace.active {
         grid-template-columns: 1fr;
+      }
+
+      .screen-1-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .topbar {
+        flex-direction: column;
+      }
+
+      .top-right-info {
+        text-align: left;
       }
     }
   </style>
 </head>
 <body>
-  <div class="page">
-    <div class="layout">
-      <aside class="panel" id="left-panel">
+  <div class="app-shell">
+    <header class="topbar">
+      <div class="brand">
+        <h1>Feuille de Messe</h1>
+        <p>
+          <strong>“Qui chante bien, deux fois prie”</strong>
+          Saint Augustin
+        </p>
+      </div>
+      <div class="top-right-info" id="top-right-info"></div>
+    </header>
+
+    <section class="panel screen-1" id="screen-1">
+      <div class="screen-1-grid">
+        <div class="field-card">
+          <label class="field-label" for="date-input">Date de la messe</label>
+          <span class="field-help">(sert à déterminer le temps liturgique et la célébration du jour)</span>
+          <input class="text-input" type="date" id="date-input" />
+        </div>
+
+        <div class="field-card">
+          <span class="field-label">Rite</span>
+          <div class="choice-row">
+            <button class="chip-button" type="button" data-rite="ordinaire">Rite ordinaire</button>
+            <button class="chip-button" type="button" data-rite="extraordinaire">Rite extraordinaire</button>
+          </div>
+        </div>
+
+        <div class="field-card screen-1-full">
+          <span class="field-label">Carnets de chants</span>
+          <input
+            class="text-input"
+            type="text"
+            id="carnet-search"
+            placeholder="Rechercher un carnet..."
+            autocomplete="off"
+          />
+          <div id="selected-carnets" style="margin-top:10px;"></div>
+          <div id="carnets-results" class="carnets-results"></div>
+          <div style="margin-top:10px;">
+            <button type="button" class="ghost-button" id="clear-carnets-button">Utiliser toute la base</button>
+          </div>
+          <div class="small-note" style="margin-top:10px;" id="liturgical-summary">
+            Non déterminé pour l’instant.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="workspace" id="workspace">
+      <aside class="panel column column-left">
         <div class="panel-inner">
-          <h1 class="site-title">Feuille de Messe</h1>
-          <div class="site-quote">
-            <strong>“Qui chante bien, deux fois prie”</strong>
-            Saint Augustin
+          <div class="subsection">
+            <div class="subsection-title">Paramètres</div>
+            <div class="small-note" id="left-summary-date"></div>
+            <div class="small-note" id="left-summary-rite" style="margin-top:4px;"></div>
+            <div class="small-note" id="left-summary-season" style="margin-top:4px;"></div>
           </div>
 
-          <div class="section-block">
-            <label class="field-label" for="date-input">Date de la messe</label>
-            <span class="field-help">(sert à déterminer le temps liturgique et la célébration du jour)</span>
-            <input class="text-input" type="date" id="date-input" />
+          <div class="subsection">
+            <div class="subsection-title">Carnets</div>
+            <div id="left-selected-carnets" class="small-note"></div>
           </div>
 
-          <div class="section-block">
-            <span class="field-label">Rite</span>
-            <div class="choice-row">
-              <button class="chip-button" type="button" data-rite="ordinaire">Rite ordinaire</button>
-              <button class="chip-button" type="button" data-rite="extraordinaire">Rite extraordinaire</button>
-            </div>
-          </div>
-
-          <div class="section-block">
-            <span class="field-label">Temps liturgique</span>
-            <div id="liturgical-summary" class="muted-note">Non déterminé pour l’instant.</div>
-          </div>
-
-          <div class="section-block">
-            <span class="field-label">Carnets de chants</span>
-            <input
-              class="text-input"
-              type="text"
-              id="carnet-search"
-              placeholder="Rechercher un carnet..."
-              autocomplete="off"
-            />
-            <div id="selected-carnets" style="margin-top: 10px;"></div>
-            <div id="carnets-results" class="sommaire-list" style="margin-top: 12px;"></div>
-            <div style="margin-top: 10px;">
-              <button type="button" class="ghost-button" id="clear-carnets-button">Utiliser toute la base</button>
-            </div>
-          </div>
-
-          <div class="section-block">
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-              <button type="button" class="small-button" id="toggle-favorites-button">Favoris</button>
-              <button type="button" class="small-button" id="report-issue-button">Signaler une erreur</button>
-            </div>
-          </div>
-
-          <div class="section-block hidden" id="favorites-block">
-            <span class="field-label">Favoris</span>
-            <div id="favorites-content" class="muted-note">Aucun favori pour l’instant.</div>
-          </div>
-
-          <div class="section-block hidden" id="sections-nav-block">
-            <span class="field-label">Sections</span>
-            <div id="sections-nav" class="sommaire-list"></div>
+          <div class="subsection">
+            <div class="subsection-title">Sections</div>
+            <div id="sections-nav" class="nav-list"></div>
           </div>
         </div>
       </aside>
 
-      <main class="panel" id="main-panel">
-        <div class="section-header">
-          <h2 class="section-title" id="current-section-title">Choisissez d’abord une date et un rite</h2>
-          <div class="liturgical-line" id="current-section-subtitle">
-            La première section apparaîtra automatiquement ensuite.
-          </div>
-          <div class="liturgical-badge hidden" id="kyriale-badge"></div>
-        </div>
+      <main class="panel column column-center">
+        <div class="panel-inner">
+          <h2 class="section-title" id="current-section-title"></h2>
+          <div class="section-subtitle" id="current-section-subtitle"></div>
+          <div class="kyriale-badge hidden" id="kyriale-badge"></div>
 
-        <div class="section-content" id="main-content">
-          <div class="empty-state" id="main-empty-state">
-            Commencez par choisir un rite. La date peut rester vide si vous le souhaitez.
-          </div>
-
-          <div class="hidden" id="section-workspace">
-            <div class="search-row">
-              <input
-                class="text-input"
-                type="text"
-                id="chant-search"
-                placeholder="Rechercher un chant..."
-                autocomplete="off"
-              />
-              <div class="search-overlay hidden" id="search-overlay">
-                <div class="search-overlay-header">
-                  <span id="search-overlay-label">Résultats</span>
-                  <button type="button" class="ghost-button" id="close-search-overlay">Fermer</button>
-                </div>
-                <div id="search-results"></div>
+          <div class="search-row">
+            <input
+              class="text-input"
+              type="text"
+              id="chant-search"
+              placeholder="Rechercher un chant..."
+              autocomplete="off"
+            />
+            <div class="search-overlay hidden" id="search-overlay">
+              <div class="search-overlay-header">
+                <span id="search-overlay-label">Résultats</span>
+                <button type="button" class="ghost-button" id="close-search-overlay">Fermer</button>
               </div>
+              <div id="search-results"></div>
             </div>
+          </div>
 
-            <div class="actions-row">
-              <button type="button" class="small-button" id="refresh-button">Rafraîchir</button>
-            </div>
+          <div class="actions-row">
+            <button type="button" class="plain-button" id="refresh-button">Rafraîchir</button>
+          </div>
 
-            <div class="cards-list" id="chants-list"></div>
+          <div class="cards-list" id="chants-list"></div>
 
-            <div class="section-footer-nav">
+          <div class="center-footer">
+            <button type="button" class="favorites-trigger" id="toggle-favorites-button">
+              <span class="heart-solid">♥</span>
+              <span>Favoris</span>
+            </button>
+
+            <div style="display:flex; gap:8px; align-items:center;">
               <button type="button" class="ghost-button" id="previous-section-button">Section précédente</button>
               <button type="button" class="ghost-button" id="skip-section-button">Passer</button>
             </div>
           </div>
+
+          <div class="favorites-panel hidden" id="favorites-panel">
+            <h4>Favoris</h4>
+            <div id="favorites-content" class="small-note">Aucun favori pour l’instant.</div>
+          </div>
         </div>
       </main>
 
-      <aside class="panel" id="sheet-panel">
+      <aside class="panel column column-right">
         <div class="sheet-header">
           <h2 class="sheet-title">Feuille de messe</h2>
           <div class="sheet-meta" id="sheet-meta">
@@ -651,18 +828,20 @@
         </div>
 
         <div class="sheet-body" id="sheet-body">
-          <div class="empty-state">
-            Aucun chant sélectionné pour l’instant.
-          </div>
+          <div class="sheet-empty">Aucun chant sélectionné pour l’instant.</div>
         </div>
 
-        <div class="sheet-download">
-          <button type="button" class="download-button" id="download-button" title="Télécharger">
-            ⭳
+        <div class="right-actions">
+          <button type="button" class="download-button" id="download-button" title="Télécharger">⭳</button>
+
+          <button type="button" class="issue-button" id="report-issue-button" title="Signaler une erreur" aria-label="Signaler une erreur">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M7 18.4 3.8 20l1.1-3.1A4 4 0 0 1 4 14.3V7.8A3.8 3.8 0 0 1 7.8 4h8.4A3.8 3.8 0 0 1 20 7.8v6.4A3.8 3.8 0 0 1 16.2 18H8.4A4.2 4.2 0 0 1 7 18.4Z"/>
+            </svg>
           </button>
         </div>
       </aside>
-    </div>
+    </section>
   </div>
 
   <script src="./app.js"></script>
