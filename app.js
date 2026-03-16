@@ -1,4 +1,5 @@
-const STORAGE_KEY = "fdm_state_v3";
+const APP_STORAGE_KEY = "fdm_app_state_v4";
+const SHEET_STORAGE_PREFIX = "fdm_sheet_";
 
 const RITE_CONFIG = {
   ordinaire: {
@@ -43,8 +44,10 @@ const state = {
   rite: "",
   date: "",
   liturgicalInfo: {
-    season: "Non déterminé",
+    season: "",
     celebration: "",
+    displayTitle: "",
+    displayDate: "",
   },
 
   selectedCarnets: [],
@@ -55,24 +58,25 @@ const state = {
   expandedCardsBySection: {},
   likes: {},
   favoritesPanelOpen: false,
+
+  pendingRiteChoice: "",
+  isAwaitingResumeChoice: false,
 };
 
 const els = {};
 
 document.addEventListener("DOMContentLoaded", async () => {
   cacheElements();
-  restoreState();
+  injectResumeModal();
+  restoreAppState();
   bindEvents();
   await loadChants();
   initializeDefaultDateIfNeeded();
   updateLiturgicalInfo();
-  ensureSectionState();
   renderAll();
 });
 
 function cacheElements() {
-  els.topRightInfo = document.getElementById("top-right-info");
-
   els.screen1 = document.getElementById("screen-1");
   els.workspace = document.getElementById("workspace");
 
@@ -93,6 +97,7 @@ function cacheElements() {
 
   els.currentSectionTitle = document.getElementById("current-section-title");
   els.currentSectionSubtitle = document.getElementById("current-section-subtitle");
+  els.currentSectionDate = document.getElementById("current-section-date");
   els.kyrialeBadge = document.getElementById("kyriale-badge");
 
   els.chantSearch = document.getElementById("chant-search");
@@ -109,86 +114,146 @@ function cacheElements() {
   els.favoritesPanel = document.getElementById("favorites-panel");
   els.favoritesContent = document.getElementById("favorites-content");
 
+  els.sheetTitle = document.getElementById("sheet-title");
   els.sheetMeta = document.getElementById("sheet-meta");
   els.sheetBody = document.getElementById("sheet-body");
   els.downloadButton = document.getElementById("download-button");
   els.reportIssueButton = document.getElementById("report-issue-button");
 }
 
+function injectResumeModal() {
+  const modal = document.createElement("div");
+  modal.id = "resume-modal";
+  modal.style.display = "none";
+  modal.style.position = "fixed";
+  modal.style.inset = "0";
+  modal.style.background = "rgba(0,0,0,0.18)";
+  modal.style.zIndex = "2000";
+  modal.style.alignItems = "center";
+  modal.style.justifyContent = "center";
+  modal.innerHTML = `
+    <div style="
+      background: rgba(255,255,255,0.98);
+      border: 1px solid #ddd6ca;
+      border-radius: 18px;
+      padding: 22px 20px;
+      min-width: 280px;
+      box-shadow: 0 14px 34px rgba(0,0,0,0.08);
+      text-align: center;
+      font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    ">
+      <div style="font-size: 1rem; font-weight: 600; margin-bottom: 16px;">Reprendre ?</div>
+      <div style="display:flex; justify-content:center; gap:10px;">
+        <button id="resume-yes" type="button" style="
+          border: 1px solid #ddd6ca;
+          background: #fff;
+          border-radius: 12px;
+          padding: 9px 16px;
+          cursor: pointer;
+        ">Oui</button>
+        <button id="resume-no" type="button" style="
+          border: 1px solid #ddd6ca;
+          background: #fff;
+          border-radius: 12px;
+          padding: 9px 16px;
+          cursor: pointer;
+        ">Non</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  els.resumeModal = modal;
+  els.resumeYes = document.getElementById("resume-yes");
+  els.resumeNo = document.getElementById("resume-no");
+}
+
 function bindEvents() {
   els.dateInput.addEventListener("change", (event) => {
     state.date = event.target.value || "";
     updateLiturgicalInfo();
-    saveState();
+    saveAppState();
+    saveCurrentSheetForRite();
     renderAll();
   });
 
   els.riteButtons.forEach((button) => {
     button.addEventListener("click", () => {
       const nextRite = button.dataset.rite;
-      if (state.rite !== nextRite) {
-        state.rite = nextRite;
-        resetSectionProgressForNewRite();
-        updateLiturgicalInfo();
-        ensureSectionState();
-        saveState();
-        renderAll();
-      }
+      handleRiteSelection(nextRite);
     });
   });
 
-  els.carnetSearch.addEventListener("input", () => {
-    renderCarnets();
-  });
+  els.carnetSearch.addEventListener("input", renderCarnets);
 
   els.clearCarnetsButton.addEventListener("click", () => {
     state.selectedCarnets = [];
     recomputeAllSuggestions();
-    saveState();
+    saveAppState();
+    saveCurrentSheetForRite();
     renderAll();
   });
 
-  els.chantSearch.addEventListener("input", () => {
-    renderSearchOverlay();
+  if (els.chantSearch) {
+    els.chantSearch.addEventListener("input", renderSearchOverlay);
+  }
+
+  if (els.closeSearchOverlay) {
+    els.closeSearchOverlay.addEventListener("click", () => {
+      els.chantSearch.value = "";
+      renderSearchOverlay();
+    });
+  }
+
+  if (els.refreshButton) {
+    els.refreshButton.addEventListener("click", () => {
+      if (!state.currentSectionKey) return;
+      appendSuggestionsForCurrentSection(3);
+      saveCurrentSheetForRite();
+      renderSectionWorkspace();
+    });
+  }
+
+  if (els.previousSectionButton) {
+    els.previousSectionButton.addEventListener("click", goToPreviousSection);
+  }
+
+  if (els.skipSectionButton) {
+    els.skipSectionButton.addEventListener("click", goToNextSection);
+  }
+
+  if (els.toggleFavoritesButton) {
+    els.toggleFavoritesButton.addEventListener("click", () => {
+      state.favoritesPanelOpen = !state.favoritesPanelOpen;
+      saveAppState();
+      renderFavorites();
+    });
+  }
+
+  if (els.downloadButton) {
+    els.downloadButton.addEventListener("click", () => window.print());
+  }
+
+  if (els.reportIssueButton) {
+    els.reportIssueButton.addEventListener("click", () => {
+      alert("Fonction à brancher plus tard.");
+    });
+  }
+
+  els.resumeYes.addEventListener("click", () => {
+    const rite = state.pendingRiteChoice;
+    closeResumeModal();
+    applySavedSheetForRite(rite);
   });
 
-  els.closeSearchOverlay.addEventListener("click", () => {
-    els.chantSearch.value = "";
-    renderSearchOverlay();
-  });
-
-  els.refreshButton.addEventListener("click", () => {
-    if (!state.currentSectionKey) return;
-    appendSuggestionsForCurrentSection(3);
-    saveState();
-    renderSectionWorkspace();
-  });
-
-  els.previousSectionButton.addEventListener("click", () => {
-    goToPreviousSection();
-  });
-
-  els.skipSectionButton.addEventListener("click", () => {
-    goToNextSection();
-  });
-
-  els.toggleFavoritesButton.addEventListener("click", () => {
-    state.favoritesPanelOpen = !state.favoritesPanelOpen;
-    saveState();
-    renderFavorites();
-  });
-
-  els.downloadButton.addEventListener("click", () => {
-    window.print();
-  });
-
-  els.reportIssueButton.addEventListener("click", () => {
-    alert(
-      "Fonction à brancher plus tard : ici, vous pourrez ouvrir un formulaire ou une fenêtre de signalement."
-    );
+  els.resumeNo.addEventListener("click", () => {
+    const rite = state.pendingRiteChoice;
+    closeResumeModal();
+    startNewSheetForRite(rite);
   });
 
   document.addEventListener("click", (event) => {
+    if (!els.searchOverlay || !els.chantSearch) return;
     const clickInsideSearch =
       els.searchOverlay.contains(event.target) || els.chantSearch.contains(event.target);
 
@@ -214,7 +279,7 @@ async function loadChants() {
   } catch (error) {
     console.error(error);
     state.loading = false;
-    alert("Erreur lors du chargement de chants.json. Vérifiez que le fichier est bien à la racine du projet.");
+    alert("Erreur lors du chargement de chants.json.");
   }
 }
 
@@ -290,17 +355,6 @@ function normalizeChant(raw, index) {
   };
 }
 
-function extractCarnetNames(chants) {
-  return Array.from(
-    new Set(
-      chants
-        .map((chant) => chant.carnet)
-        .filter(Boolean)
-        .sort((a, b) => a.localeCompare(b, "fr"))
-    )
-  );
-}
-
 function normalizeStringArray(value) {
   if (Array.isArray(value)) {
     return value
@@ -319,55 +373,158 @@ function normalizeStringArray(value) {
   return [];
 }
 
-function restoreState() {
+function extractCarnetNames(chants) {
+  return Array.from(
+    new Set(
+      chants
+        .map((chant) => chant.carnet)
+        .filter(Boolean)
+        .sort((a, b) => a.localeCompare(b, "fr"))
+    )
+  );
+}
+
+function restoreAppState() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(APP_STORAGE_KEY);
     if (!raw) return;
 
     const parsed = JSON.parse(raw);
-
-    state.rite = parsed.rite || "";
     state.date = parsed.date || "";
     state.selectedCarnets = Array.isArray(parsed.selectedCarnets) ? parsed.selectedCarnets : [];
-    state.currentSectionKey = parsed.currentSectionKey || "";
-    state.visitedSections = Array.isArray(parsed.visitedSections) ? parsed.visitedSections : [];
-    state.selectedBySection = parsed.selectedBySection || {};
-    state.visibleSuggestionsBySection = parsed.visibleSuggestionsBySection || {};
-    state.expandedCardsBySection = parsed.expandedCardsBySection || {};
     state.likes = parsed.likes || {};
     state.favoritesPanelOpen = Boolean(parsed.favoritesPanelOpen);
+
+    state.rite = "";
+    state.currentSectionKey = "";
+    state.visitedSections = [];
+    state.selectedBySection = {};
+    state.visibleSuggestionsBySection = {};
+    state.expandedCardsBySection = {};
   } catch (error) {
-    console.warn("Impossible de restaurer l’état local :", error);
+    console.warn("Impossible de restaurer l’état général :", error);
   }
 }
 
-function saveState() {
+function saveAppState() {
   const serializable = {
-    rite: state.rite,
     date: state.date,
     selectedCarnets: state.selectedCarnets,
+    likes: state.likes,
+    favoritesPanelOpen: state.favoritesPanelOpen,
+  };
+  localStorage.setItem(APP_STORAGE_KEY, JSON.stringify(serializable));
+}
+
+function getSheetStorageKey(rite) {
+  return `${SHEET_STORAGE_PREFIX}${rite}`;
+}
+
+function getSavedSheetForRite(rite) {
+  try {
+    const raw = localStorage.getItem(getSheetStorageKey(rite));
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveCurrentSheetForRite() {
+  if (!state.rite) return;
+
+  const payload = {
+    rite: state.rite,
+    date: state.date,
     currentSectionKey: state.currentSectionKey,
     visitedSections: state.visitedSections,
     selectedBySection: state.selectedBySection,
     visibleSuggestionsBySection: state.visibleSuggestionsBySection,
     expandedCardsBySection: state.expandedCardsBySection,
-    likes: state.likes,
-    favoritesPanelOpen: state.favoritesPanelOpen,
   };
 
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable));
+  localStorage.setItem(getSheetStorageKey(state.rite), JSON.stringify(payload));
+}
+
+function handleRiteSelection(nextRite) {
+  const savedSheet = getSavedSheetForRite(nextRite);
+  state.pendingRiteChoice = nextRite;
+
+  if (savedSheet && hasUsableSavedSheet(savedSheet)) {
+    openResumeModal();
+    return;
+  }
+
+  startNewSheetForRite(nextRite);
+}
+
+function hasUsableSavedSheet(savedSheet) {
+  if (!savedSheet) return false;
+  const selectedBySection = savedSheet.selectedBySection || {};
+  return Object.values(selectedBySection).some((arr) => Array.isArray(arr) && arr.length > 0);
+}
+
+function startNewSheetForRite(rite) {
+  state.rite = rite;
+  state.currentSectionKey = "";
+  state.visitedSections = [];
+  state.selectedBySection = {};
+  state.visibleSuggestionsBySection = {};
+  state.expandedCardsBySection = {};
+  updateLiturgicalInfo();
+  ensureSectionState();
+  saveAppState();
+  saveCurrentSheetForRite();
+  renderAll();
+}
+
+function applySavedSheetForRite(rite) {
+  const saved = getSavedSheetForRite(rite);
+
+  state.rite = rite;
+
+  if (!saved) {
+    startNewSheetForRite(rite);
+    return;
+  }
+
+  state.date = saved.date || state.date;
+  if (els.dateInput) {
+    els.dateInput.value = state.date || "";
+  }
+
+  state.currentSectionKey = saved.currentSectionKey || "";
+  state.visitedSections = Array.isArray(saved.visitedSections) ? saved.visitedSections : [];
+  state.selectedBySection = saved.selectedBySection || {};
+  state.visibleSuggestionsBySection = saved.visibleSuggestionsBySection || {};
+  state.expandedCardsBySection = saved.expandedCardsBySection || {};
+
+  updateLiturgicalInfo();
+  ensureSectionState();
+  saveAppState();
+  renderAll();
+}
+
+function openResumeModal() {
+  state.isAwaitingResumeChoice = true;
+  els.resumeModal.style.display = "flex";
+}
+
+function closeResumeModal() {
+  state.isAwaitingResumeChoice = false;
+  els.resumeModal.style.display = "none";
+  state.pendingRiteChoice = "";
 }
 
 function initializeDefaultDateIfNeeded() {
   if (state.date) {
-    els.dateInput.value = state.date;
+    if (els.dateInput) els.dateInput.value = state.date;
     return;
   }
 
   const nextSunday = getNextSundayISO();
   state.date = nextSunday;
-  els.dateInput.value = nextSunday;
-  saveState();
+  if (els.dateInput) els.dateInput.value = nextSunday;
+  saveAppState();
 }
 
 function getNextSundayISO() {
@@ -392,8 +549,10 @@ function updateLiturgicalInfo() {
 function computeLiturgicalInfo(dateStr, rite) {
   if (!dateStr) {
     return {
-      season: "Non déterminé",
-      celebration: "Date non renseignée",
+      season: "",
+      celebration: "",
+      displayTitle: "",
+      displayDate: "",
     };
   }
 
@@ -401,38 +560,34 @@ function computeLiturgicalInfo(dateStr, rite) {
     try {
       const result = window.calculerTempsLiturgique(dateStr, rite);
       return {
-        season: result?.season || result?.temps || "Non déterminé",
+        season: result?.season || result?.temps || "",
         celebration: result?.celebration || result?.fete || "",
+        displayTitle: result?.displayTitle || result?.celebration || result?.fete || "",
+        displayDate: result?.displayDate || formatDateShortFr(dateStr),
       };
     } catch (error) {
-      console.warn("calculerTempsLiturgique a échoué, fallback utilisé.", error);
+      console.warn("Fallback liturgique utilisé.", error);
     }
   }
 
-  return fallbackLiturgicalInfo(dateStr);
+  return {
+    season: fallbackSeason(dateStr),
+    celebration: "Célébration du jour à intégrer plus finement",
+    displayTitle: "Célébration du jour à intégrer plus finement",
+    displayDate: formatDateShortFr(dateStr),
+  };
 }
 
-function fallbackLiturgicalInfo(dateStr) {
+function fallbackSeason(dateStr) {
   const date = new Date(dateStr + "T12:00:00");
   const month = date.getMonth() + 1;
   const day = date.getDate();
 
-  let season = "Temps ordinaire";
-
-  if ((month === 12 && day >= 1) || (month === 1 && day <= 13)) {
-    season = "Temps de Noël";
-  } else if (month === 2 || (month === 3 && day < 20)) {
-    season = "Carême";
-  } else if ((month === 3 && day >= 20) || month === 4 || (month === 5 && day <= 20)) {
-    season = "Temps pascal";
-  } else if (month === 11 || (month === 12 && day < 1)) {
-    season = "Avent";
-  }
-
-  return {
-    season,
-    celebration: "Célébration du jour à intégrer plus finement",
-  };
+  if ((month === 12 && day >= 1) || (month === 1 && day <= 13)) return "Temps de Noël";
+  if (month === 2 || (month === 3 && day < 20)) return "Carême";
+  if ((month === 3 && day >= 20) || month === 4 || (month === 5 && day <= 20)) return "Temps pascal";
+  if (month === 11 || (month === 12 && day < 1)) return "Avent";
+  return "Temps ordinaire";
 }
 
 function ensureSectionState() {
@@ -453,11 +608,9 @@ function ensureSectionState() {
   Object.keys(state.selectedBySection).forEach((key) => {
     if (!validKeys.has(key)) delete state.selectedBySection[key];
   });
-
   Object.keys(state.visibleSuggestionsBySection).forEach((key) => {
     if (!validKeys.has(key)) delete state.visibleSuggestionsBySection[key];
   });
-
   Object.keys(state.expandedCardsBySection).forEach((key) => {
     if (!validKeys.has(key)) delete state.expandedCardsBySection[key];
   });
@@ -479,14 +632,6 @@ function ensureSectionState() {
   });
 }
 
-function resetSectionProgressForNewRite() {
-  state.currentSectionKey = "";
-  state.visitedSections = [];
-  state.selectedBySection = {};
-  state.visibleSuggestionsBySection = {};
-  state.expandedCardsBySection = {};
-}
-
 function getCurrentSections() {
   if (!state.rite || !RITE_CONFIG[state.rite]) return [];
   return RITE_CONFIG[state.rite].sections;
@@ -500,9 +645,7 @@ function renderAll() {
   renderRiteButtons();
   renderLiturgicalSummary();
   renderCarnets();
-  ensureSectionState();
   renderScreenMode();
-  renderTopInfo();
   renderLeftColumn();
   renderSectionWorkspace();
   renderFavorites();
@@ -511,18 +654,8 @@ function renderAll() {
 
 function renderScreenMode() {
   const hasRite = Boolean(state.rite);
-
-  els.screen1.classList.toggle("hidden", hasRite);
-  els.workspace.classList.toggle("active", hasRite);
-}
-
-function renderTopInfo() {
-  const parts = [];
-  if (state.date) parts.push(formatDateFr(state.date));
-  if (state.rite) parts.push(RITE_CONFIG[state.rite]?.label || state.rite);
-  if (state.liturgicalInfo.season) parts.push(state.liturgicalInfo.season);
-
-  els.topRightInfo.textContent = parts.join(" — ");
+  if (els.screen1) els.screen1.classList.toggle("hidden", hasRite);
+  if (els.workspace) els.workspace.classList.toggle("active", hasRite);
 }
 
 function renderRiteButtons() {
@@ -532,13 +665,14 @@ function renderRiteButtons() {
 }
 
 function renderLiturgicalSummary() {
-  const parts = [state.liturgicalInfo.season || "Non déterminé"];
-  if (state.liturgicalInfo.celebration) parts.push(state.liturgicalInfo.celebration);
-  els.liturgicalSummary.textContent = parts.join(" — ");
+  if (!els.liturgicalSummary) return;
+  els.liturgicalSummary.textContent = state.liturgicalInfo.displayTitle || "";
 }
 
 function renderCarnets() {
-  const query = els.carnetSearch.value.trim().toLowerCase();
+  if (!els.selectedCarnets || !els.carnetsResults) return;
+
+  const query = (els.carnetSearch?.value || "").trim().toLowerCase();
 
   els.selectedCarnets.innerHTML = "";
   if (state.selectedCarnets.length === 0) {
@@ -554,19 +688,14 @@ function renderCarnets() {
       const removeButton = document.createElement("button");
       removeButton.type = "button";
       removeButton.textContent = "×";
-      removeButton.addEventListener("click", () => {
-        toggleCarnet(name);
-      });
+      removeButton.addEventListener("click", () => toggleCarnet(name));
       chip.appendChild(removeButton);
       els.selectedCarnets.appendChild(chip);
     });
   }
 
   els.carnetsResults.innerHTML = "";
-
-  const filtered = state.carnetNames.filter((name) =>
-    name.toLowerCase().includes(query)
-  );
+  const filtered = state.carnetNames.filter((name) => name.toLowerCase().includes(query));
 
   filtered.slice(0, 12).forEach((name) => {
     const button = document.createElement("button");
@@ -582,11 +711,7 @@ function renderCarnets() {
 
     button.appendChild(label);
     button.appendChild(stateLabel);
-
-    button.addEventListener("click", () => {
-      toggleCarnet(name);
-    });
-
+    button.addEventListener("click", () => toggleCarnet(name));
     els.carnetsResults.appendChild(button);
   });
 
@@ -606,7 +731,8 @@ function toggleCarnet(name) {
   }
 
   recomputeAllSuggestions();
-  saveState();
+  saveAppState();
+  saveCurrentSheetForRite();
   renderAll();
 }
 
@@ -624,27 +750,26 @@ function recomputeAllSuggestions() {
 }
 
 function renderLeftColumn() {
-  els.leftSummaryDate.textContent = state.date ? `Date : ${formatDateFr(state.date)}` : "Date : non renseignée";
-  els.leftSummaryRite.textContent = state.rite ? `Rite : ${RITE_CONFIG[state.rite]?.label || state.rite}` : "Rite : non renseigné";
+  if (!els.leftSummaryDate) return;
 
-  const seasonParts = [state.liturgicalInfo.season || "Non déterminé"];
-  if (state.liturgicalInfo.celebration) seasonParts.push(state.liturgicalInfo.celebration);
-  els.leftSummarySeason.textContent = seasonParts.join(" — ");
+  els.leftSummaryDate.textContent = state.date ? `Date : ${formatDateShortFr(state.date)}` : "";
+  els.leftSummaryRite.textContent = state.rite ? `Rite : ${RITE_CONFIG[state.rite]?.label || state.rite}` : "";
+  els.leftSummarySeason.textContent = state.liturgicalInfo.displayTitle || "";
 
-  if (state.selectedCarnets.length === 0) {
-    els.leftSelectedCarnets.textContent = "Toute la base";
-  } else {
-    els.leftSelectedCarnets.textContent = state.selectedCarnets.join(" • ");
-  }
+  els.leftSelectedCarnets.textContent =
+    state.selectedCarnets.length === 0 ? "Toute la base" : state.selectedCarnets.join(" • ");
 
   renderSectionsNav();
 }
 
 function renderSectionsNav() {
+  if (!els.sectionsNav) return;
   const sections = getCurrentSections();
   els.sectionsNav.innerHTML = "";
 
-  sections.forEach((section) => {
+  const visibleVisited = sections.filter((section) => state.visitedSections.includes(section.key));
+
+  visibleVisited.forEach((section) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "nav-item";
@@ -658,11 +783,10 @@ function renderSectionsNav() {
 
     button.appendChild(label);
     button.appendChild(stateLabel);
-
     button.addEventListener("click", () => {
       state.currentSectionKey = section.key;
       markSectionVisited(section.key);
-      saveState();
+      saveCurrentSheetForRite();
       renderAll();
     });
 
@@ -672,29 +796,33 @@ function renderSectionsNav() {
 
 function renderSectionWorkspace() {
   if (!state.rite) return;
-
   const section = getSectionByKey(state.currentSectionKey);
   if (!section) return;
 
-  const season = state.liturgicalInfo.season || "Non déterminé";
-  const celebration = state.liturgicalInfo.celebration || "";
+  if (els.currentSectionTitle) {
+    els.currentSectionTitle.textContent = section.label;
+  }
 
-  els.currentSectionTitle.textContent = section.label;
+  if (els.currentSectionSubtitle) {
+    els.currentSectionSubtitle.textContent = state.liturgicalInfo.displayTitle || "";
+  }
 
-  const subtitleParts = [`Temps liturgique : ${season}`];
-  if (celebration) subtitleParts.push(celebration);
-  els.currentSectionSubtitle.textContent = subtitleParts.join(" — ");
+  if (els.currentSectionDate) {
+    els.currentSectionDate.textContent = state.date ? formatDateShortFr(state.date) : "";
+  }
 
   renderKyrialeBadge(section);
   renderSearchOverlay();
   renderCards();
 
   const currentIndex = getCurrentSections().findIndex((item) => item.key === section.key);
-  els.previousSectionButton.disabled = currentIndex <= 0;
+  if (els.previousSectionButton) els.previousSectionButton.disabled = currentIndex <= 0;
 }
 
 function renderKyrialeBadge(section) {
-  if (!section.kyrialePart) {
+  if (!els.kyrialeBadge) return;
+
+  if (!section.kyrialePart || !state.date) {
     els.kyrialeBadge.classList.add("hidden");
     els.kyrialeBadge.textContent = "";
     return;
@@ -702,13 +830,9 @@ function renderKyrialeBadge(section) {
 
   const uniformKyriale = inferUniformKyrialeChoice();
   els.kyrialeBadge.classList.remove("hidden");
-
-  if (!uniformKyriale) {
-    els.kyrialeBadge.textContent = "Mode du Kyriale : homogène par défaut, personnalisable.";
-    return;
-  }
-
-  els.kyrialeBadge.textContent = `Kyriale sélectionné par défaut : ${uniformKyriale}`;
+  els.kyrialeBadge.textContent = uniformKyriale
+    ? `Kyriale : ${uniformKyriale}`
+    : "Kyriale homogène par défaut";
 }
 
 function inferUniformKyrialeChoice() {
@@ -732,12 +856,13 @@ function inferUniformKyrialeChoice() {
     .filter(Boolean);
 
   if (!kyrialePattern.length) return "";
-
   const first = kyrialePattern[0];
   return kyrialePattern.every((value) => value === first) ? first : "";
 }
 
 function renderSearchOverlay() {
+  if (!els.searchOverlay || !els.searchResults || !els.chantSearch) return;
+
   const section = getSectionByKey(state.currentSectionKey);
   const query = els.chantSearch.value.trim();
 
@@ -749,7 +874,9 @@ function renderSearchOverlay() {
 
   const results = searchChants(query, section.key).slice(0, 12);
   els.searchOverlay.classList.remove("hidden");
-  els.searchOverlayLabel.textContent = `${results.length} résultat(s)`;
+  if (els.searchOverlayLabel) {
+    els.searchOverlayLabel.textContent = `${results.length} résultat(s)`;
+  }
 
   els.searchResults.innerHTML = "";
 
@@ -772,16 +899,13 @@ function renderSearchOverlay() {
         ${escapeHtml(chant.carnet || "Carnet non précisé")}
       </div>
     `;
-
-    button.addEventListener("click", () => {
-      injectSearchResultIntoCurrentSection(chant.id);
-    });
-
+    button.addEventListener("click", () => injectSearchResultIntoCurrentSection(chant.id));
     els.searchResults.appendChild(button);
   });
 }
 
 function renderCards() {
+  if (!els.chantsList) return;
   const section = getSectionByKey(state.currentSectionKey);
   if (!section) return;
 
@@ -798,7 +922,7 @@ function renderCards() {
   if (chants.length === 0) {
     const empty = document.createElement("div");
     empty.className = "sheet-empty";
-    empty.textContent = "Aucune suggestion pour cette section pour l’instant.";
+    empty.textContent = "Aucune suggestion pour cette section.";
     els.chantsList.appendChild(empty);
     return;
   }
@@ -828,15 +952,12 @@ function createChantCard(chant, section) {
     <div class="chant-title">${escapeHtml(chant.title)}</div>
     <div class="chant-meta">${escapeHtml(buildChantMeta(chant, section))}</div>
   `;
-  contentButton.addEventListener("click", () => {
-    toggleExpanded(section.key, chant.id);
-  });
+  contentButton.addEventListener("click", () => toggleExpanded(section.key, chant.id));
 
   const heartButton = document.createElement("button");
   heartButton.type = "button";
   heartButton.className = `heart-button${isLiked ? " liked" : ""}`;
   heartButton.textContent = isLiked ? "♥" : "♡";
-  heartButton.title = isLiked ? "Retirer des favoris" : "Ajouter aux favoris";
   heartButton.addEventListener("click", (event) => {
     event.stopPropagation();
     toggleLike(chant.id);
@@ -868,10 +989,7 @@ function createChantCard(chant, section) {
 
 function buildPreviewHtml(chant) {
   const parts = [];
-
-  if (chant.refrain) {
-    parts.push(`<strong>${escapeHtml(chant.refrain)}</strong>`);
-  }
+  if (chant.refrain) parts.push(`<strong>${escapeHtml(chant.refrain)}</strong>`);
 
   if (chant.couplets.length > 0) {
     chant.couplets.slice(0, 6).forEach((couplet) => {
@@ -889,37 +1007,25 @@ function buildPreviewHtml(chant) {
 function buildChantMeta(chant, section) {
   const meta = [];
   if (chant.carnet) meta.push(chant.carnet);
-
-  if (section.kyrialePart) {
-    const title = chant.title.toLowerCase();
-    if (title.includes("messe") || title.includes("kyriale")) {
-      meta.push("Pièce de messe");
-    }
-  }
-
-  if (chant.qualityScore) {
-    meta.push(`Confiance ${Math.round(chant.qualityScore)}`);
-  }
-
+  if (section.kyrialePart) meta.push("Pièce de messe");
+  if (chant.qualityScore) meta.push(`Confiance ${Math.round(chant.qualityScore)}`);
   return meta.join(" — ") || "Chant disponible";
 }
 
 function toggleExpanded(sectionKey, chantId) {
   const list = new Set(state.expandedCardsBySection[sectionKey] || []);
-  if (list.has(chantId)) {
-    list.delete(chantId);
-  } else {
-    list.add(chantId);
-  }
+  if (list.has(chantId)) list.delete(chantId);
+  else list.add(chantId);
   state.expandedCardsBySection[sectionKey] = Array.from(list);
-  saveState();
+  saveCurrentSheetForRite();
   renderSectionWorkspace();
 }
 
 function toggleLike(chantId) {
   state.likes[chantId] = !state.likes[chantId];
   recomputeAllSuggestions();
-  saveState();
+  saveAppState();
+  saveCurrentSheetForRite();
   renderAll();
 }
 
@@ -927,11 +1033,8 @@ function toggleSelection(sectionKey, chantId) {
   const list = new Set(state.selectedBySection[sectionKey] || []);
   const wasSelected = list.has(chantId);
 
-  if (wasSelected) {
-    list.delete(chantId);
-  } else {
-    list.add(chantId);
-  }
+  if (wasSelected) list.delete(chantId);
+  else list.add(chantId);
 
   state.selectedBySection[sectionKey] = Array.from(list);
 
@@ -939,11 +1042,9 @@ function toggleSelection(sectionKey, chantId) {
   visible.add(chantId);
   state.visibleSuggestionsBySection[sectionKey] = Array.from(visible);
 
-  if (!wasSelected) {
-    goToNextSection(true);
-  }
+  if (!wasSelected) goToNextSection(true);
 
-  saveState();
+  saveCurrentSheetForRite();
   renderAll();
 }
 
@@ -961,7 +1062,7 @@ function injectSearchResultIntoCurrentSection(chantId) {
   els.chantSearch.value = "";
   markSectionVisited(sectionKey);
   goToNextSection(true);
-  saveState();
+  saveCurrentSheetForRite();
   renderAll();
 }
 
@@ -993,7 +1094,6 @@ function searchChants(query, sectionKey) {
   return base
     .map((chant) => {
       let score = 0;
-
       const title = normalizeText(chant.title);
       const refrain = normalizeText(chant.refrain);
       const text = normalizeText(chant.completeText);
@@ -1002,8 +1102,7 @@ function searchChants(query, sectionKey) {
       if (refrain.includes(normalizedQuery)) score += 80;
       if (text.includes(normalizedQuery)) score += 50;
 
-      const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
-      queryWords.forEach((word) => {
+      normalizedQuery.split(/\s+/).filter(Boolean).forEach((word) => {
         if (title.includes(word)) score += 25;
         if (refrain.includes(word)) score += 12;
         if (text.includes(word)) score += 8;
@@ -1027,7 +1126,6 @@ function getRankedSuggestions(sectionKey) {
   return getFilteredChants()
     .map((chant) => {
       let score = 0;
-
       if (chantMatchesSection(chant, section)) score += 140;
       if (chantMatchesSeason(chant, state.liturgicalInfo.season)) score += 32;
       if (chantMatchesRite(chant, state.rite)) score += 18;
@@ -1035,7 +1133,6 @@ function getRankedSuggestions(sectionKey) {
       if (chant.annotationStatus.includes("ok")) score += 8;
       score += Math.min(chant.qualityScore, 100) * 0.18;
       score += Math.random() * 3;
-
       return { chant, score };
     })
     .sort((a, b) => b.score - a.score || a.chant.title.localeCompare(b.chant.title, "fr"))
@@ -1044,39 +1141,28 @@ function getRankedSuggestions(sectionKey) {
 
 function getFilteredChants() {
   let chants = state.chants;
-
   if (state.selectedCarnets.length > 0) {
     chants = chants.filter((chant) => state.selectedCarnets.includes(chant.carnet));
   }
-
   return chants;
 }
 
 function chantMatchesSection(chant, section) {
   if (!section) return false;
-
-  const functionText = [
-    ...chant.functions,
-    ...chant.themes,
-    ...chant.fetes,
-  ].join(" ");
-
+  const functionText = [...chant.functions, ...chant.themes, ...chant.fetes].join(" ");
   return section.liturgyKeys.some((key) => functionText.includes(key.toLowerCase()));
 }
 
 function chantMatchesSeason(chant, seasonLabel) {
-  if (!seasonLabel || seasonLabel === "Non déterminé") return true;
+  if (!seasonLabel) return true;
   const normalizedSeason = normalizeText(seasonLabel);
-
   if (chant.seasons.length === 0) return true;
-
   return chant.seasons.some((season) => normalizeText(season).includes(normalizedSeason));
 }
 
 function chantMatchesRite(chant, rite) {
   if (!rite) return true;
   if (chant.rites.length === 0) return true;
-
   return chant.rites.some((item) => normalizeText(item).includes(normalizeText(rite)));
 }
 
@@ -1094,7 +1180,7 @@ function goToPreviousSection() {
 
   state.currentSectionKey = sections[index - 1].key;
   markSectionVisited(state.currentSectionKey);
-  saveState();
+  saveCurrentSheetForRite();
   renderAll();
 }
 
@@ -1106,7 +1192,7 @@ function goToNextSection(fromAutoProgress = false) {
   const next = sections[index + 1];
   if (!next) {
     if (!fromAutoProgress) {
-      saveState();
+      saveCurrentSheetForRite();
       renderAll();
     }
     return;
@@ -1114,7 +1200,7 @@ function goToNextSection(fromAutoProgress = false) {
 
   state.currentSectionKey = next.key;
   markSectionVisited(next.key);
-  saveState();
+  saveCurrentSheetForRite();
   renderAll();
 }
 
@@ -1126,6 +1212,7 @@ function markSectionVisited(sectionKey) {
 }
 
 function renderFavorites() {
+  if (!els.favoritesPanel || !els.favoritesContent) return;
   els.favoritesPanel.classList.toggle("hidden", !state.favoritesPanelOpen);
 
   const likedIds = Object.entries(state.likes)
@@ -1138,7 +1225,6 @@ function renderFavorites() {
   }
 
   const grouped = {};
-
   getCurrentSections().forEach((section) => {
     grouped[section.key] = [];
   });
@@ -1170,7 +1256,6 @@ function renderFavorites() {
       getSectionByKey(sectionKey)?.label || (sectionKey === "autres" ? "Autres" : sectionKey);
 
     const list = document.createElement("div");
-
     chants
       .sort((a, b) => a.title.localeCompare(b.title, "fr"))
       .forEach((chant) => {
@@ -1190,20 +1275,16 @@ function renderFavorites() {
 }
 
 function renderSheet() {
-  const sections = getCurrentSections();
+  if (!els.sheetBody || !els.sheetMeta) return;
 
-  const metaParts = [];
-  if (state.date) metaParts.push(`Date : ${formatDateFr(state.date)}`);
-  if (state.rite) metaParts.push(RITE_CONFIG[state.rite]?.label || state.rite);
-  if (state.liturgicalInfo?.season) metaParts.push(state.liturgicalInfo.season);
-  if (state.liturgicalInfo?.celebration) metaParts.push(state.liturgicalInfo.celebration);
+  if (els.sheetTitle) {
+    els.sheetTitle.textContent = state.liturgicalInfo.displayTitle || "Feuille de messe";
+  }
 
-  els.sheetMeta.textContent = metaParts.length
-    ? metaParts.join(" — ")
-    : "La feuille se construira ici au fur et à mesure.";
-
+  els.sheetMeta.textContent = state.date ? formatDateShortFr(state.date) : "";
   els.sheetBody.innerHTML = "";
 
+  const sections = getCurrentSections();
   const hasAnySelection = sections.some(
     (section) => (state.selectedBySection[section.key] || []).length > 0
   );
@@ -1243,7 +1324,6 @@ function renderSheet() {
       const up = document.createElement("button");
       up.type = "button";
       up.className = "icon-button";
-      up.title = "Monter";
       up.textContent = "↑";
       up.disabled = index === 0;
       up.addEventListener("click", () => moveSelectedChant(section.key, index, -1));
@@ -1251,7 +1331,6 @@ function renderSheet() {
       const down = document.createElement("button");
       down.type = "button";
       down.className = "icon-button";
-      down.title = "Descendre";
       down.textContent = "↓";
       down.disabled = index === selectedIds.length - 1;
       down.addEventListener("click", () => moveSelectedChant(section.key, index, 1));
@@ -1259,11 +1338,8 @@ function renderSheet() {
       const remove = document.createElement("button");
       remove.type = "button";
       remove.className = "icon-button";
-      remove.title = "Retirer";
       remove.textContent = "×";
-      remove.addEventListener("click", () => {
-        toggleSelection(section.key, id);
-      });
+      remove.addEventListener("click", () => toggleSelection(section.key, id));
 
       controls.appendChild(up);
       controls.appendChild(down);
@@ -1281,26 +1357,21 @@ function renderSheet() {
 function moveSelectedChant(sectionKey, index, delta) {
   const list = [...(state.selectedBySection[sectionKey] || [])];
   const newIndex = index + delta;
-
   if (newIndex < 0 || newIndex >= list.length) return;
 
-  const temp = list[index];
-  list[index] = list[newIndex];
-  list[newIndex] = temp;
-
+  [list[index], list[newIndex]] = [list[newIndex], list[index]];
   state.selectedBySection[sectionKey] = list;
-  saveState();
+  saveCurrentSheetForRite();
   renderSheet();
 }
 
-function formatDateFr(isoDate) {
+function formatDateShortFr(isoDate) {
   if (!isoDate) return "";
   const date = new Date(isoDate + "T12:00:00");
   return date.toLocaleDateString("fr-FR", {
     weekday: "long",
-    year: "numeric",
-    month: "long",
     day: "numeric",
+    month: "long",
   });
 }
 
