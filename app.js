@@ -1,4 +1,4 @@
-const STORAGE_KEY = "fdm_state_v2";
+const STORAGE_KEY = "fdm_state_v3";
 
 const RITE_CONFIG = {
   ordinaire: {
@@ -71,6 +71,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function cacheElements() {
+  els.topRightInfo = document.getElementById("top-right-info");
+
+  els.screen1 = document.getElementById("screen-1");
+  els.workspace = document.getElementById("workspace");
+
   els.dateInput = document.getElementById("date-input");
   els.riteButtons = Array.from(document.querySelectorAll("[data-rite]"));
   els.liturgicalSummary = document.getElementById("liturgical-summary");
@@ -80,20 +85,16 @@ function cacheElements() {
   els.carnetsResults = document.getElementById("carnets-results");
   els.clearCarnetsButton = document.getElementById("clear-carnets-button");
 
-  els.favoritesBlock = document.getElementById("favorites-block");
-  els.favoritesContent = document.getElementById("favorites-content");
-  els.toggleFavoritesButton = document.getElementById("toggle-favorites-button");
-  els.reportIssueButton = document.getElementById("report-issue-button");
-
-  els.sectionsNavBlock = document.getElementById("sections-nav-block");
+  els.leftSummaryDate = document.getElementById("left-summary-date");
+  els.leftSummaryRite = document.getElementById("left-summary-rite");
+  els.leftSummarySeason = document.getElementById("left-summary-season");
+  els.leftSelectedCarnets = document.getElementById("left-selected-carnets");
   els.sectionsNav = document.getElementById("sections-nav");
 
   els.currentSectionTitle = document.getElementById("current-section-title");
   els.currentSectionSubtitle = document.getElementById("current-section-subtitle");
   els.kyrialeBadge = document.getElementById("kyriale-badge");
 
-  els.mainEmptyState = document.getElementById("main-empty-state");
-  els.sectionWorkspace = document.getElementById("section-workspace");
   els.chantSearch = document.getElementById("chant-search");
   els.searchOverlay = document.getElementById("search-overlay");
   els.searchOverlayLabel = document.getElementById("search-overlay-label");
@@ -104,16 +105,20 @@ function cacheElements() {
   els.previousSectionButton = document.getElementById("previous-section-button");
   els.skipSectionButton = document.getElementById("skip-section-button");
 
+  els.toggleFavoritesButton = document.getElementById("toggle-favorites-button");
+  els.favoritesPanel = document.getElementById("favorites-panel");
+  els.favoritesContent = document.getElementById("favorites-content");
+
   els.sheetMeta = document.getElementById("sheet-meta");
   els.sheetBody = document.getElementById("sheet-body");
   els.downloadButton = document.getElementById("download-button");
+  els.reportIssueButton = document.getElementById("report-issue-button");
 }
 
 function bindEvents() {
   els.dateInput.addEventListener("change", (event) => {
     state.date = event.target.value || "";
     updateLiturgicalInfo();
-    ensureSectionState();
     saveState();
     renderAll();
   });
@@ -138,24 +143,9 @@ function bindEvents() {
 
   els.clearCarnetsButton.addEventListener("click", () => {
     state.selectedCarnets = [];
+    recomputeAllSuggestions();
     saveState();
     renderAll();
-  });
-
-  els.toggleFavoritesButton.addEventListener("click", () => {
-    state.favoritesPanelOpen = !state.favoritesPanelOpen;
-    renderFavorites();
-    saveState();
-  });
-
-  els.reportIssueButton.addEventListener("click", () => {
-    const message = [
-      "Fonction à brancher plus tard :",
-      "",
-      "vous pourrez ici ouvrir un formulaire, un mailto:,",
-      "ou une petite fenêtre de signalement."
-    ].join("\n");
-    alert(message);
   });
 
   els.chantSearch.addEventListener("input", () => {
@@ -182,13 +172,26 @@ function bindEvents() {
     goToNextSection();
   });
 
+  els.toggleFavoritesButton.addEventListener("click", () => {
+    state.favoritesPanelOpen = !state.favoritesPanelOpen;
+    saveState();
+    renderFavorites();
+  });
+
   els.downloadButton.addEventListener("click", () => {
     window.print();
+  });
+
+  els.reportIssueButton.addEventListener("click", () => {
+    alert(
+      "Fonction à brancher plus tard : ici, vous pourrez ouvrir un formulaire ou une fenêtre de signalement."
+    );
   });
 
   document.addEventListener("click", (event) => {
     const clickInsideSearch =
       els.searchOverlay.contains(event.target) || els.chantSearch.contains(event.target);
+
     if (!clickInsideSearch) {
       els.chantSearch.value = "";
       renderSearchOverlay();
@@ -199,9 +202,7 @@ function bindEvents() {
 async function loadChants() {
   try {
     const response = await fetch("./chants.json");
-    if (!response.ok) {
-      throw new Error("Impossible de charger chants.json");
-    }
+    if (!response.ok) throw new Error("Impossible de charger chants.json");
 
     const data = await response.json();
     const chants = Array.isArray(data) ? data : Array.isArray(data.chants) ? data.chants : [];
@@ -499,10 +500,29 @@ function renderAll() {
   renderRiteButtons();
   renderLiturgicalSummary();
   renderCarnets();
+  ensureSectionState();
+  renderScreenMode();
+  renderTopInfo();
+  renderLeftColumn();
+  renderSectionWorkspace();
   renderFavorites();
-  renderSectionsNav();
-  renderMainArea();
   renderSheet();
+}
+
+function renderScreenMode() {
+  const hasRite = Boolean(state.rite);
+
+  els.screen1.classList.toggle("hidden", hasRite);
+  els.workspace.classList.toggle("active", hasRite);
+}
+
+function renderTopInfo() {
+  const parts = [];
+  if (state.date) parts.push(formatDateFr(state.date));
+  if (state.rite) parts.push(RITE_CONFIG[state.rite]?.label || state.rite);
+  if (state.liturgicalInfo.season) parts.push(state.liturgicalInfo.season);
+
+  els.topRightInfo.textContent = parts.join(" — ");
 }
 
 function renderRiteButtons() {
@@ -513,9 +533,7 @@ function renderRiteButtons() {
 
 function renderLiturgicalSummary() {
   const parts = [state.liturgicalInfo.season || "Non déterminé"];
-  if (state.liturgicalInfo.celebration) {
-    parts.push(state.liturgicalInfo.celebration);
-  }
+  if (state.liturgicalInfo.celebration) parts.push(state.liturgicalInfo.celebration);
   els.liturgicalSummary.textContent = parts.join(" — ");
 }
 
@@ -525,7 +543,7 @@ function renderCarnets() {
   els.selectedCarnets.innerHTML = "";
   if (state.selectedCarnets.length === 0) {
     const note = document.createElement("div");
-    note.className = "muted-note";
+    note.className = "small-note";
     note.textContent = "Aucun carnet sélectionné : toute la base sera utilisée.";
     els.selectedCarnets.appendChild(note);
   } else {
@@ -553,16 +571,13 @@ function renderCarnets() {
   filtered.slice(0, 12).forEach((name) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "sommaire-item";
-    if (state.selectedCarnets.includes(name)) {
-      button.classList.add("current");
-    }
+    button.className = "carnet-item";
+    if (state.selectedCarnets.includes(name)) button.classList.add("active");
 
     const label = document.createElement("span");
     label.textContent = name;
 
     const stateLabel = document.createElement("span");
-    stateLabel.className = "sommaire-state";
     stateLabel.textContent = state.selectedCarnets.includes(name) ? "Sélectionné" : "Ajouter";
 
     button.appendChild(label);
@@ -577,7 +592,7 @@ function renderCarnets() {
 
   if (filtered.length === 0) {
     const empty = document.createElement("div");
-    empty.className = "muted-note";
+    empty.className = "small-note";
     empty.textContent = "Aucun carnet trouvé.";
     els.carnetsResults.appendChild(empty);
   }
@@ -603,97 +618,42 @@ function recomputeAllSuggestions() {
       .filter((chant) => !selectedIds.has(chant.id))
       .slice(0, 3)
       .map((chant) => chant.id);
+
     state.visibleSuggestionsBySection[section.key] = suggestions;
   });
 }
 
-function renderFavorites() {
-  els.favoritesBlock.classList.toggle("hidden", !state.favoritesPanelOpen);
-  if (!state.favoritesPanelOpen) return;
+function renderLeftColumn() {
+  els.leftSummaryDate.textContent = state.date ? `Date : ${formatDateFr(state.date)}` : "Date : non renseignée";
+  els.leftSummaryRite.textContent = state.rite ? `Rite : ${RITE_CONFIG[state.rite]?.label || state.rite}` : "Rite : non renseigné";
 
-  const likedIds = Object.entries(state.likes)
-    .filter(([, liked]) => liked)
-    .map(([id]) => id);
+  const seasonParts = [state.liturgicalInfo.season || "Non déterminé"];
+  if (state.liturgicalInfo.celebration) seasonParts.push(state.liturgicalInfo.celebration);
+  els.leftSummarySeason.textContent = seasonParts.join(" — ");
 
-  if (likedIds.length === 0) {
-    els.favoritesContent.innerHTML = "Aucun favori pour l’instant.";
-    return;
+  if (state.selectedCarnets.length === 0) {
+    els.leftSelectedCarnets.textContent = "Toute la base";
+  } else {
+    els.leftSelectedCarnets.textContent = state.selectedCarnets.join(" • ");
   }
 
-  const grouped = {};
-
-  getCurrentSections().forEach((section) => {
-    grouped[section.key] = [];
-  });
-
-  likedIds.forEach((id) => {
-    const chant = state.chantsById.get(id);
-    if (!chant) return;
-
-    const matchingSection = getCurrentSections().find((section) =>
-      chantMatchesSection(chant, section)
-    );
-
-    const key = matchingSection ? matchingSection.key : "autres";
-    if (!grouped[key]) grouped[key] = [];
-    grouped[key].push(chant);
-  });
-
-  const fragment = document.createDocumentFragment();
-
-  Object.entries(grouped).forEach(([sectionKey, chants]) => {
-    if (!chants.length) return;
-
-    const block = document.createElement("div");
-    block.style.marginBottom = "12px";
-
-    const title = document.createElement("div");
-    title.style.fontWeight = "700";
-    title.style.marginBottom = "6px";
-    title.textContent =
-      getSectionByKey(sectionKey)?.label || (sectionKey === "autres" ? "Autres" : sectionKey);
-
-    const list = document.createElement("div");
-    chants
-      .sort((a, b) => a.title.localeCompare(b.title, "fr"))
-      .forEach((chant) => {
-        const item = document.createElement("div");
-        item.className = "muted-note";
-        item.textContent = chant.title;
-        list.appendChild(item);
-      });
-
-    block.appendChild(title);
-    block.appendChild(list);
-    fragment.appendChild(block);
-  });
-
-  els.favoritesContent.innerHTML = "";
-  els.favoritesContent.appendChild(fragment);
+  renderSectionsNav();
 }
 
 function renderSectionsNav() {
   const sections = getCurrentSections();
-  const shouldShow = sections.length > 0 && state.visitedSections.length > 0;
-  els.sectionsNavBlock.classList.toggle("hidden", !shouldShow);
   els.sectionsNav.innerHTML = "";
 
-  if (!shouldShow) return;
-
-  const visibleVisited = sections.filter((section) => state.visitedSections.includes(section.key));
-
-  visibleVisited.forEach((section) => {
+  sections.forEach((section) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "sommaire-item";
+    button.className = "nav-item";
     if (section.key === state.currentSectionKey) button.classList.add("current");
-    if ((state.selectedBySection[section.key] || []).length > 0) button.classList.add("completed");
 
     const label = document.createElement("span");
     label.textContent = section.label;
 
     const stateLabel = document.createElement("span");
-    stateLabel.className = "sommaire-state";
     stateLabel.textContent = (state.selectedBySection[section.key] || []).length > 0 ? "✓" : "";
 
     button.appendChild(label);
@@ -710,24 +670,9 @@ function renderSectionsNav() {
   });
 }
 
-function renderMainArea() {
-  const sections = getCurrentSections();
-
-  if (!state.rite || sections.length === 0) {
-    els.mainEmptyState.classList.remove("hidden");
-    els.sectionWorkspace.classList.add("hidden");
-    els.currentSectionTitle.textContent = "Choisissez d’abord une date et un rite";
-    els.currentSectionSubtitle.textContent = "La première section apparaîtra automatiquement ensuite.";
-    els.kyrialeBadge.classList.add("hidden");
-    return;
-  }
-
-  els.mainEmptyState.classList.add("hidden");
-  els.sectionWorkspace.classList.remove("hidden");
-  renderSectionWorkspace();
-}
-
 function renderSectionWorkspace() {
+  if (!state.rite) return;
+
   const section = getSectionByKey(state.currentSectionKey);
   if (!section) return;
 
@@ -743,6 +688,9 @@ function renderSectionWorkspace() {
   renderKyrialeBadge(section);
   renderSearchOverlay();
   renderCards();
+
+  const currentIndex = getCurrentSections().findIndex((item) => item.key === section.key);
+  els.previousSectionButton.disabled = currentIndex <= 0;
 }
 
 function renderKyrialeBadge(section) {
@@ -753,13 +701,13 @@ function renderKyrialeBadge(section) {
   }
 
   const uniformKyriale = inferUniformKyrialeChoice();
+  els.kyrialeBadge.classList.remove("hidden");
+
   if (!uniformKyriale) {
-    els.kyrialeBadge.classList.remove("hidden");
     els.kyrialeBadge.textContent = "Mode du Kyriale : homogène par défaut, personnalisable.";
     return;
   }
 
-  els.kyrialeBadge.classList.remove("hidden");
   els.kyrialeBadge.textContent = `Kyriale sélectionné par défaut : ${uniformKyriale}`;
 }
 
@@ -786,8 +734,7 @@ function inferUniformKyrialeChoice() {
   if (!kyrialePattern.length) return "";
 
   const first = kyrialePattern[0];
-  const allSame = kyrialePattern.every((value) => value === first);
-  return allSame ? first : "";
+  return kyrialePattern.every((value) => value === first) ? first : "";
 }
 
 function renderSearchOverlay() {
@@ -808,8 +755,8 @@ function renderSearchOverlay() {
 
   if (results.length === 0) {
     const empty = document.createElement("div");
-    empty.className = "muted-note";
-    empty.style.padding = "14px";
+    empty.className = "small-note";
+    empty.style.padding = "12px 14px";
     empty.textContent = "Aucun chant trouvé.";
     els.searchResults.appendChild(empty);
     return;
@@ -821,7 +768,7 @@ function renderSearchOverlay() {
     button.className = "search-result-button";
     button.innerHTML = `
       <div style="font-weight:700;">${escapeHtml(chant.title)}</div>
-      <div style="color:#6e6a63; margin-top:4px; font-size:0.92rem;">
+      <div style="color:#6c675f; margin-top:4px; font-size:0.85rem;">
         ${escapeHtml(chant.carnet || "Carnet non précisé")}
       </div>
     `;
@@ -840,8 +787,8 @@ function renderCards() {
 
   const selectedIds = state.selectedBySection[section.key] || [];
   const visibleSuggestions = state.visibleSuggestionsBySection[section.key] || [];
-
   const orderedIds = uniqueArray([...selectedIds, ...visibleSuggestions]);
+
   const chants = orderedIds
     .map((id) => state.chantsById.get(id))
     .filter(Boolean);
@@ -850,17 +797,15 @@ function renderCards() {
 
   if (chants.length === 0) {
     const empty = document.createElement("div");
-    empty.className = "empty-state";
+    empty.className = "sheet-empty";
     empty.textContent = "Aucune suggestion pour cette section pour l’instant.";
     els.chantsList.appendChild(empty);
-  } else {
-    chants.forEach((chant) => {
-      els.chantsList.appendChild(createChantCard(chant, section));
-    });
+    return;
   }
 
-  const currentIndex = getCurrentSections().findIndex((item) => item.key === section.key);
-  els.previousSectionButton.disabled = currentIndex <= 0;
+  chants.forEach((chant) => {
+    els.chantsList.appendChild(createChantCard(chant, section));
+  });
 }
 
 function createChantCard(chant, section) {
@@ -1180,6 +1125,70 @@ function markSectionVisited(sectionKey) {
   }
 }
 
+function renderFavorites() {
+  els.favoritesPanel.classList.toggle("hidden", !state.favoritesPanelOpen);
+
+  const likedIds = Object.entries(state.likes)
+    .filter(([, liked]) => liked)
+    .map(([id]) => id);
+
+  if (likedIds.length === 0) {
+    els.favoritesContent.innerHTML = "Aucun favori pour l’instant.";
+    return;
+  }
+
+  const grouped = {};
+
+  getCurrentSections().forEach((section) => {
+    grouped[section.key] = [];
+  });
+
+  likedIds.forEach((id) => {
+    const chant = state.chantsById.get(id);
+    if (!chant) return;
+
+    const matchingSection = getCurrentSections().find((section) =>
+      chantMatchesSection(chant, section)
+    );
+
+    const key = matchingSection ? matchingSection.key : "autres";
+    if (!grouped[key]) grouped[key] = [];
+    grouped[key].push(chant);
+  });
+
+  const fragment = document.createDocumentFragment();
+
+  Object.entries(grouped).forEach(([sectionKey, chants]) => {
+    if (!chants.length) return;
+
+    const block = document.createElement("div");
+    block.className = "favorite-group";
+
+    const title = document.createElement("div");
+    title.className = "favorite-group-title";
+    title.textContent =
+      getSectionByKey(sectionKey)?.label || (sectionKey === "autres" ? "Autres" : sectionKey);
+
+    const list = document.createElement("div");
+
+    chants
+      .sort((a, b) => a.title.localeCompare(b.title, "fr"))
+      .forEach((chant) => {
+        const item = document.createElement("div");
+        item.className = "favorite-item";
+        item.textContent = chant.title;
+        list.appendChild(item);
+      });
+
+    block.appendChild(title);
+    block.appendChild(list);
+    fragment.appendChild(block);
+  });
+
+  els.favoritesContent.innerHTML = "";
+  els.favoritesContent.appendChild(fragment);
+}
+
 function renderSheet() {
   const sections = getCurrentSections();
 
@@ -1201,7 +1210,7 @@ function renderSheet() {
 
   if (!hasAnySelection) {
     const empty = document.createElement("div");
-    empty.className = "empty-state";
+    empty.className = "sheet-empty";
     empty.textContent = "Aucun chant sélectionné pour l’instant.";
     els.sheetBody.appendChild(empty);
     return;
