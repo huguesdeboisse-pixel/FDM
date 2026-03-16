@@ -1,18 +1,18 @@
-const APP_STORAGE_KEY = "fdm_app_state_v4";
+const APP_STORAGE_KEY = "fdm_app_state_v5";
 const SHEET_STORAGE_PREFIX = "fdm_sheet_";
 
 const RITE_CONFIG = {
   ordinaire: {
     label: "Rite ordinaire",
     sections: [
-      { key: "entree", label: "Entrée", liturgyKeys: ["entree"] },
+      { key: "entree", label: "Entrée", liturgyKeys: ["entree", "entrée", "ouverture"] },
       { key: "kyrie", label: "Kyrie", liturgyKeys: ["kyrie"], kyrialePart: true },
       { key: "gloria", label: "Gloria", liturgyKeys: ["gloria"], kyrialePart: true },
-      { key: "psaume", label: "Psaume", liturgyKeys: ["psaume"], collapsedByDefault: true },
+      { key: "psaume", label: "Psaume", liturgyKeys: ["psaume", "psalm"], collapsedByDefault: true },
       { key: "credo", label: "Credo", liturgyKeys: ["credo"], kyrialePart: true },
-      { key: "offertoire", label: "Offertoire", liturgyKeys: ["offertoire"] },
+      { key: "offertoire", label: "Offertoire", liturgyKeys: ["offertoire", "offrande", "offertoire"] },
       { key: "sanctus", label: "Sanctus", liturgyKeys: ["sanctus"], kyrialePart: true },
-      { key: "anamnese", label: "Anamnèse", liturgyKeys: ["anamnese"], collapsedByDefault: true },
+      { key: "anamnese", label: "Anamnèse", liturgyKeys: ["anamnese", "anamnèse"], collapsedByDefault: true },
       { key: "amen", label: "Amen", liturgyKeys: ["amen"], collapsedByDefault: true },
       { key: "agnus", label: "Agnus Dei", liturgyKeys: ["agnus", "agnus dei"], kyrialePart: true },
       { key: "communion", label: "Communion", liturgyKeys: ["communion"] },
@@ -22,7 +22,7 @@ const RITE_CONFIG = {
   extraordinaire: {
     label: "Rite extraordinaire",
     sections: [
-      { key: "introit", label: "Introït", liturgyKeys: ["introit", "introït", "entree"] },
+      { key: "introit", label: "Introït", liturgyKeys: ["introit", "introït", "entree", "entrée"] },
       { key: "kyrie", label: "Kyrie", liturgyKeys: ["kyrie"], kyrialePart: true },
       { key: "gloria", label: "Gloria", liturgyKeys: ["gloria"], kyrialePart: true },
       { key: "credo", label: "Credo", liturgyKeys: ["credo"], kyrialePart: true },
@@ -43,12 +43,7 @@ const state = {
 
   rite: "",
   date: "",
-  liturgicalInfo: {
-    season: "",
-    celebration: "",
-    displayTitle: "",
-    displayDate: "",
-  },
+  liturgicalInfo: createEmptyLiturgicalInfo(),
 
   selectedCarnets: [],
   currentSectionKey: "",
@@ -70,11 +65,35 @@ document.addEventListener("DOMContentLoaded", async () => {
   injectResumeModal();
   restoreAppState();
   bindEvents();
+  applyStaticUiAdjustments();
   await loadChants();
   initializeDefaultDateIfNeeded();
   updateLiturgicalInfo();
   renderAll();
 });
+
+function createEmptyLiturgicalInfo() {
+  return {
+    dateISO: "",
+    rite: "",
+    season: { id: "", label: "" },
+    celebration: { id: "", label: "" },
+    rank: { id: "", label: "" },
+    color: { id: "", label: "" },
+    privilegedSeason: false,
+    sanctoral: { id: "", label: "" },
+    display: {
+      title: "",
+      subtitle: "",
+      date: "",
+    },
+    metadata: {
+      source: "",
+      priority: null,
+      omittedCelebrations: [],
+    },
+  };
+}
 
 function cacheElements() {
   els.screen1 = document.getElementById("screen-1");
@@ -119,6 +138,31 @@ function cacheElements() {
   els.sheetBody = document.getElementById("sheet-body");
   els.downloadButton = document.getElementById("download-button");
   els.reportIssueButton = document.getElementById("report-issue-button");
+}
+
+function applyStaticUiAdjustments() {
+  if (els.toggleFavoritesButton) {
+    els.toggleFavoritesButton.textContent = "Favoris";
+    els.toggleFavoritesButton.setAttribute("aria-label", "Ouvrir les favoris");
+  }
+
+  if (els.previousSectionButton) {
+    els.previousSectionButton.innerHTML = "← Précédent";
+    els.previousSectionButton.setAttribute("aria-label", "Revenir à la section précédente");
+  }
+
+  if (els.skipSectionButton) {
+    els.skipSectionButton.innerHTML = "Suivant →";
+    els.skipSectionButton.setAttribute("aria-label", "Passer à la section suivante");
+  }
+
+  if (els.sheetTitle) {
+    els.sheetTitle.style.textAlign = "center";
+  }
+
+  if (els.sheetMeta) {
+    els.sheetMeta.style.textAlign = "center";
+  }
 }
 
 function injectResumeModal() {
@@ -169,13 +213,16 @@ function injectResumeModal() {
 }
 
 function bindEvents() {
-  els.dateInput.addEventListener("change", (event) => {
-    state.date = event.target.value || "";
-    updateLiturgicalInfo();
-    saveAppState();
-    saveCurrentSheetForRite();
-    renderAll();
-  });
+  if (els.dateInput) {
+    els.dateInput.addEventListener("change", (event) => {
+      state.date = event.target.value || "";
+      updateLiturgicalInfo();
+      recomputeAllSuggestions();
+      saveAppState();
+      saveCurrentSheetForRite();
+      renderAll();
+    });
+  }
 
   els.riteButtons.forEach((button) => {
     button.addEventListener("click", () => {
@@ -184,15 +231,19 @@ function bindEvents() {
     });
   });
 
-  els.carnetSearch.addEventListener("input", renderCarnets);
+  if (els.carnetSearch) {
+    els.carnetSearch.addEventListener("input", renderCarnets);
+  }
 
-  els.clearCarnetsButton.addEventListener("click", () => {
-    state.selectedCarnets = [];
-    recomputeAllSuggestions();
-    saveAppState();
-    saveCurrentSheetForRite();
-    renderAll();
-  });
+  if (els.clearCarnetsButton) {
+    els.clearCarnetsButton.addEventListener("click", () => {
+      state.selectedCarnets = [];
+      recomputeAllSuggestions();
+      saveAppState();
+      saveCurrentSheetForRite();
+      renderAll();
+    });
+  }
 
   if (els.chantSearch) {
     els.chantSearch.addEventListener("input", renderSearchOverlay);
@@ -240,17 +291,21 @@ function bindEvents() {
     });
   }
 
-  els.resumeYes.addEventListener("click", () => {
-    const rite = state.pendingRiteChoice;
-    closeResumeModal();
-    applySavedSheetForRite(rite);
-  });
+  if (els.resumeYes) {
+    els.resumeYes.addEventListener("click", () => {
+      const rite = state.pendingRiteChoice;
+      closeResumeModal();
+      applySavedSheetForRite(rite);
+    });
+  }
 
-  els.resumeNo.addEventListener("click", () => {
-    const rite = state.pendingRiteChoice;
-    closeResumeModal();
-    startNewSheetForRite(rite);
-  });
+  if (els.resumeNo) {
+    els.resumeNo.addEventListener("click", () => {
+      const rite = state.pendingRiteChoice;
+      closeResumeModal();
+      startNewSheetForRite(rite);
+    });
+  }
 
   document.addEventListener("click", (event) => {
     if (!els.searchOverlay || !els.chantSearch) return;
@@ -287,31 +342,29 @@ function normalizeChant(raw, index) {
   if (!raw || typeof raw !== "object") return null;
 
   const id = String(raw.id || raw.titre_normalise || raw.titre || `chant_${index}`);
-  const title = String(raw.titre || raw.title || "Sans titre");
+  const title = String(raw.titre || raw.title || "Sans titre").trim();
 
-  const refrain =
-    raw?.texte_normalise?.refrain ||
-    raw?.texte?.refrain ||
-    raw?.refrain ||
-    "";
+  const refrainLines = normalizeLinesArray(
+    raw?.texte_normalise?.refrain ??
+      raw?.texte?.refrain ??
+      raw?.refrain ??
+      []
+  );
 
-  const coupletsArray =
-    raw?.texte_normalise?.couplets ||
-    raw?.texte?.couplets ||
-    raw?.couplets ||
-    [];
-
-  const couplets = Array.isArray(coupletsArray)
-    ? coupletsArray.filter(Boolean).map(String)
-    : typeof coupletsArray === "string"
-    ? [coupletsArray]
-    : [];
+  const couplets = normalizeLinesArray(
+    raw?.texte_normalise?.couplets ??
+      raw?.texte?.couplets ??
+      raw?.couplets ??
+      []
+  );
 
   const completeText =
-    raw?.texte_normalise?.texte_complet ||
-    raw?.texte?.texte_complet ||
-    raw?.texte_complet ||
-    [refrain, ...couplets].filter(Boolean).join("\n\n");
+    String(
+      raw?.texte_normalise?.texte_complet ||
+        raw?.texte?.texte_complet ||
+        raw?.texte_complet ||
+        [...refrainLines, ...couplets].join("\n\n")
+    ).trim();
 
   const liturgie = raw.liturgie || {};
   const functions = normalizeStringArray(liturgie.fonctions);
@@ -325,25 +378,18 @@ function normalizeChant(raw, index) {
     Number(raw?.score_confiance) ||
     0;
 
-  const annotationStatus =
-    String(raw?.qualite_annotation?.statut_annotation || "").toLowerCase();
+  const annotationStatus = String(raw?.qualite_annotation?.statut_annotation || "").toLowerCase();
 
-  const carnet =
-    raw.carnet ||
-    raw.source ||
-    raw.origine ||
-    raw.collection ||
-    raw?.meta?.carnet ||
-    raw?.metadata?.carnet ||
-    "";
+  const carnet = extractCarnetName(raw);
 
   return {
     ...raw,
     id,
     title,
-    refrain: String(refrain || ""),
+    refrainLines,
+    refrain: refrainLines.join("\n"),
     couplets,
-    completeText: String(completeText || ""),
+    completeText,
     functions,
     seasons,
     rites,
@@ -351,8 +397,26 @@ function normalizeChant(raw, index) {
     fetes,
     qualityScore,
     annotationStatus,
-    carnet: String(carnet || "").trim(),
+    carnet,
   };
+}
+
+function normalizeLinesArray(value) {
+  if (Array.isArray(value)) {
+    return value
+      .flatMap((item) => String(item || "").split("\n"))
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    return value
+      .split("\n")
+      .map((item) => item.trim())
+      .filter(Boolean);
+  }
+
+  return [];
 }
 
 function normalizeStringArray(value) {
@@ -371,6 +435,23 @@ function normalizeStringArray(value) {
   }
 
   return [];
+}
+
+function extractCarnetName(raw) {
+  if (typeof raw.carnet === "string" && raw.carnet.trim()) return raw.carnet.trim();
+  if (typeof raw.collection === "string" && raw.collection.trim()) return raw.collection.trim();
+  if (typeof raw.origine === "string" && raw.origine.trim()) return raw.origine.trim();
+  if (typeof raw?.meta?.carnet === "string" && raw.meta.carnet.trim()) return raw.meta.carnet.trim();
+  if (typeof raw?.metadata?.carnet === "string" && raw.metadata.carnet.trim()) return raw.metadata.carnet.trim();
+
+  if (typeof raw.source === "string" && raw.source.trim()) return raw.source.trim();
+  if (raw.source && typeof raw.source === "object") {
+    if (typeof raw.source.pdf_nom === "string" && raw.source.pdf_nom.trim()) return raw.source.pdf_nom.trim();
+    if (typeof raw.source.nom === "string" && raw.source.nom.trim()) return raw.source.nom.trim();
+    if (typeof raw.source.file === "string" && raw.source.file.trim()) return raw.source.file.trim();
+  }
+
+  return "";
 }
 
 function extractCarnetNames(chants) {
@@ -470,6 +551,7 @@ function startNewSheetForRite(rite) {
   state.selectedBySection = {};
   state.visibleSuggestionsBySection = {};
   state.expandedCardsBySection = {};
+
   updateLiturgicalInfo();
   ensureSectionState();
   saveAppState();
@@ -506,12 +588,16 @@ function applySavedSheetForRite(rite) {
 
 function openResumeModal() {
   state.isAwaitingResumeChoice = true;
-  els.resumeModal.style.display = "flex";
+  if (els.resumeModal) {
+    els.resumeModal.style.display = "flex";
+  }
 }
 
 function closeResumeModal() {
   state.isAwaitingResumeChoice = false;
-  els.resumeModal.style.display = "none";
+  if (els.resumeModal) {
+    els.resumeModal.style.display = "none";
+  }
   state.pendingRiteChoice = "";
 }
 
@@ -546,48 +632,160 @@ function updateLiturgicalInfo() {
   state.liturgicalInfo = computeLiturgicalInfo(state.date, state.rite);
 }
 
-function computeLiturgicalInfo(dateStr, rite) {
-  if (!dateStr) {
-    return {
-      season: "",
-      celebration: "",
-      displayTitle: "",
-      displayDate: "",
-    };
+function computeLiturgicalInfo(dateISO, rite) {
+  if (!dateISO || !rite) {
+    return createEmptyLiturgicalInfo();
   }
 
   if (typeof window.calculerTempsLiturgique === "function") {
     try {
-      const result = window.calculerTempsLiturgique(dateStr, rite);
-      return {
-        season: result?.season || result?.temps || "",
-        celebration: result?.celebration || result?.fete || "",
-        displayTitle: result?.displayTitle || result?.celebration || result?.fete || "",
-        displayDate: result?.displayDate || formatDateShortFr(dateStr),
-      };
+      const rawResult = window.calculerTempsLiturgique(dateISO, rite);
+      return normalizeLiturgicalResult(rawResult, dateISO, rite);
     } catch (error) {
-      console.warn("Fallback liturgique utilisé.", error);
+      console.warn("Erreur dans calculerTempsLiturgique, utilisation d’un mode transitoire.", error);
     }
   }
 
+  return createTransitionalLiturgicalInfo(dateISO, rite);
+}
+
+function normalizeLiturgicalResult(rawResult, dateISO, rite) {
+  const base = createEmptyLiturgicalInfo();
+
+  const result = rawResult && typeof rawResult === "object" ? rawResult : {};
+
+  const seasonLabel = pickString(
+    result?.season?.label,
+    result?.season,
+    ""
+  );
+
+  const celebrationLabel = pickString(
+    result?.celebration?.label,
+    result?.celebration,
+    ""
+  );
+
+  const rankLabel = pickString(
+    result?.rank?.label,
+    result?.rank,
+    ""
+  );
+
+  const colorLabel = pickString(
+    result?.color?.label,
+    result?.color,
+    ""
+  );
+
+  const sanctoralLabel = pickString(
+    result?.sanctoral?.label,
+    result?.sanctoral,
+    ""
+  );
+
+  const displayDate = pickString(
+    result?.display?.date,
+    result?.displayDate,
+    formatDateShortFr(dateISO, false)
+  );
+
+  let displayTitle = pickString(
+    result?.display?.title,
+    result?.displayTitle,
+    celebrationLabel,
+    seasonLabel
+  );
+
+  let displaySubtitle = pickString(
+    result?.display?.subtitle,
+    result?.displaySubtitle,
+    ""
+  );
+
+  if (!displaySubtitle) {
+    const subtitleParts = [displayDate];
+    if (sanctoralLabel && sanctoralLabel !== displayTitle) subtitleParts.push(sanctoralLabel);
+    if (colorLabel) subtitleParts.push(colorLabel);
+    displaySubtitle = subtitleParts.filter(Boolean).join(" — ");
+  }
+
+  if (!displayTitle && dateISO) {
+    displayTitle = "Célébration à déterminer";
+  }
+
   return {
-    season: fallbackSeason(dateStr),
-    celebration: "Célébration du jour à intégrer plus finement",
-    displayTitle: "Célébration du jour à intégrer plus finement",
-    displayDate: formatDateShortFr(dateStr),
+    ...base,
+    dateISO,
+    rite,
+    season: {
+      id: pickString(result?.season?.id, ""),
+      label: seasonLabel,
+    },
+    celebration: {
+      id: pickString(result?.celebration?.id, ""),
+      label: celebrationLabel,
+    },
+    rank: {
+      id: pickString(result?.rank?.id, ""),
+      label: rankLabel,
+    },
+    color: {
+      id: pickString(result?.color?.id, ""),
+      label: colorLabel,
+    },
+    privilegedSeason: Boolean(result?.privilegedSeason),
+    sanctoral: {
+      id: pickString(result?.sanctoral?.id, ""),
+      label: sanctoralLabel,
+    },
+    display: {
+      title: displayTitle,
+      subtitle: displaySubtitle,
+      date: displayDate,
+    },
+    metadata: {
+      source: pickString(result?.metadata?.source, ""),
+      priority:
+        typeof result?.metadata?.priority === "number" ? result.metadata.priority : null,
+      omittedCelebrations: Array.isArray(result?.metadata?.omittedCelebrations)
+        ? result.metadata.omittedCelebrations
+        : [],
+    },
   };
 }
 
-function fallbackSeason(dateStr) {
-  const date = new Date(dateStr + "T12:00:00");
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
+function createTransitionalLiturgicalInfo(dateISO, rite) {
+  const dateLabel = formatDateShortFr(dateISO, false);
+  const riteLabel = RITE_CONFIG[rite]?.label || rite;
 
-  if ((month === 12 && day >= 1) || (month === 1 && day <= 13)) return "Temps de Noël";
-  if (month === 2 || (month === 3 && day < 20)) return "Carême";
-  if ((month === 3 && day >= 20) || month === 4 || (month === 5 && day <= 20)) return "Temps pascal";
-  if (month === 11 || (month === 12 && day < 1)) return "Avent";
-  return "Temps ordinaire";
+  return {
+    dateISO,
+    rite,
+    season: { id: "", label: "" },
+    celebration: { id: "", label: "" },
+    rank: { id: "", label: "" },
+    color: { id: "", label: "" },
+    privilegedSeason: false,
+    sanctoral: { id: "", label: "" },
+    display: {
+      title: "",
+      subtitle: dateLabel ? `${dateLabel} — ${riteLabel}` : riteLabel,
+      date: dateLabel,
+    },
+    metadata: {
+      source: "transitional_stub",
+      priority: null,
+      omittedCelebrations: [],
+    },
+  };
+}
+
+function pickString(...values) {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
 }
 
 function ensureSectionState() {
@@ -666,7 +864,7 @@ function renderRiteButtons() {
 
 function renderLiturgicalSummary() {
   if (!els.liturgicalSummary) return;
-  els.liturgicalSummary.textContent = state.liturgicalInfo.displayTitle || "";
+  els.liturgicalSummary.textContent = state.liturgicalInfo.display.title || "";
 }
 
 function renderCarnets() {
@@ -754,7 +952,7 @@ function renderLeftColumn() {
 
   els.leftSummaryDate.textContent = state.date ? `Date : ${formatDateShortFr(state.date)}` : "";
   els.leftSummaryRite.textContent = state.rite ? `Rite : ${RITE_CONFIG[state.rite]?.label || state.rite}` : "";
-  els.leftSummarySeason.textContent = state.liturgicalInfo.displayTitle || "";
+  els.leftSummarySeason.textContent = state.liturgicalInfo.display.title || "";
 
   els.leftSelectedCarnets.textContent =
     state.selectedCarnets.length === 0 ? "Toute la base" : state.selectedCarnets.join(" • ");
@@ -804,11 +1002,11 @@ function renderSectionWorkspace() {
   }
 
   if (els.currentSectionSubtitle) {
-    els.currentSectionSubtitle.textContent = state.liturgicalInfo.displayTitle || "";
+    els.currentSectionSubtitle.textContent = state.liturgicalInfo.display.title || "";
   }
 
   if (els.currentSectionDate) {
-    els.currentSectionDate.textContent = state.date ? formatDateShortFr(state.date) : "";
+    els.currentSectionDate.textContent = state.liturgicalInfo.display.subtitle || "";
   }
 
   renderKyrialeBadge(section);
@@ -989,14 +1187,20 @@ function createChantCard(chant, section) {
 
 function buildPreviewHtml(chant) {
   const parts = [];
-  if (chant.refrain) parts.push(`<strong>${escapeHtml(chant.refrain)}</strong>`);
+
+  if (chant.refrainLines.length > 0) {
+    const refrainHtml = chant.refrainLines
+      .map((line) => `<div>${escapeHtml(line)}</div>`)
+      .join("");
+    parts.push(`<div><strong>${refrainHtml}</strong></div>`);
+  }
 
   if (chant.couplets.length > 0) {
     chant.couplets.slice(0, 6).forEach((couplet) => {
-      parts.push(`<p>${escapeHtml(couplet)}</p>`);
+      parts.push(`<p>${escapeHtml(couplet).replaceAll("\n", "<br>")}</p>`);
     });
   } else if (chant.completeText) {
-    parts.push(`<p>${escapeHtml(chant.completeText)}</p>`);
+    parts.push(`<p>${escapeHtml(chant.completeText).replaceAll("\n", "<br>")}</p>`);
   } else {
     parts.push(`<p>Texte non disponible.</p>`);
   }
@@ -1059,7 +1263,10 @@ function injectSearchResultIntoCurrentSection(chantId) {
   selectedSet.add(chantId);
   state.selectedBySection[sectionKey] = Array.from(selectedSet);
 
-  els.chantSearch.value = "";
+  if (els.chantSearch) {
+    els.chantSearch.value = "";
+  }
+
   markSectionVisited(sectionKey);
   goToNextSection(true);
   saveCurrentSheetForRite();
@@ -1109,7 +1316,7 @@ function searchChants(query, sectionKey) {
       });
 
       if (section && chantMatchesSection(chant, section)) score += 20;
-      if (chantMatchesSeason(chant, state.liturgicalInfo.season)) score += 10;
+      if (chantMatchesSeason(chant, state.liturgicalInfo.season.label)) score += 10;
       if (chantMatchesRite(chant, state.rite)) score += 8;
 
       return { chant, score };
@@ -1127,10 +1334,10 @@ function getRankedSuggestions(sectionKey) {
     .map((chant) => {
       let score = 0;
       if (chantMatchesSection(chant, section)) score += 140;
-      if (chantMatchesSeason(chant, state.liturgicalInfo.season)) score += 32;
+      if (chantMatchesSeason(chant, state.liturgicalInfo.season.label)) score += 32;
       if (chantMatchesRite(chant, state.rite)) score += 18;
       if (state.likes[chant.id]) score += 50;
-      if (chant.annotationStatus.includes("ok")) score += 8;
+      if (chant.annotationStatus.includes("annote_auto")) score += 8;
       score += Math.min(chant.qualityScore, 100) * 0.18;
       score += Math.random() * 3;
       return { chant, score };
@@ -1149,15 +1356,32 @@ function getFilteredChants() {
 
 function chantMatchesSection(chant, section) {
   if (!section) return false;
-  const functionText = [...chant.functions, ...chant.themes, ...chant.fetes].join(" ");
-  return section.liturgyKeys.some((key) => functionText.includes(key.toLowerCase()));
+
+  const searchable = [
+    ...chant.functions,
+    ...chant.themes,
+    ...chant.fetes,
+    normalizeText(chant.title),
+    normalizeText(chant.completeText),
+  ].join(" ");
+
+  return section.liturgyKeys.some((key) => searchable.includes(normalizeText(key)));
 }
 
 function chantMatchesSeason(chant, seasonLabel) {
   if (!seasonLabel) return true;
-  const normalizedSeason = normalizeText(seasonLabel);
   if (chant.seasons.length === 0) return true;
-  return chant.seasons.some((season) => normalizeText(season).includes(normalizedSeason));
+
+  const normalizedSeason = normalizeText(seasonLabel);
+
+  return chant.seasons.some((season) => {
+    const s = normalizeText(season);
+    return (
+      s.includes(normalizedSeason) ||
+      normalizedSeason.includes(s) ||
+      s.includes("t_tous_temps")
+    );
+  });
 }
 
 function chantMatchesRite(chant, rite) {
@@ -1278,10 +1502,12 @@ function renderSheet() {
   if (!els.sheetBody || !els.sheetMeta) return;
 
   if (els.sheetTitle) {
-    els.sheetTitle.textContent = state.liturgicalInfo.displayTitle || "Feuille de messe";
+    els.sheetTitle.textContent = state.liturgicalInfo.display.title || "Feuille de messe";
+    els.sheetTitle.style.textAlign = "center";
   }
 
-  els.sheetMeta.textContent = state.date ? formatDateShortFr(state.date) : "";
+  els.sheetMeta.textContent = state.liturgicalInfo.display.subtitle || "";
+  els.sheetMeta.style.textAlign = "center";
   els.sheetBody.innerHTML = "";
 
   const sections = getCurrentSections();
@@ -1365,14 +1591,13 @@ function moveSelectedChant(sectionKey, index, delta) {
   renderSheet();
 }
 
-function formatDateShortFr(isoDate) {
+function formatDateShortFr(isoDate, withWeekday = true) {
   if (!isoDate) return "";
-  const date = new Date(isoDate + "T12:00:00");
-  return date.toLocaleDateString("fr-FR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
+  const date = new Date(`${isoDate}T12:00:00`);
+  return date.toLocaleDateString("fr-FR", withWeekday
+    ? { weekday: "long", day: "numeric", month: "long" }
+    : { day: "numeric", month: "long" }
+  );
 }
 
 function uniqueArray(array) {
