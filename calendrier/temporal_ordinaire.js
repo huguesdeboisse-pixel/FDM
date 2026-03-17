@@ -1,340 +1,153 @@
-// calendrier/temporal_ordinaire.js
+import { daysBetween } from "./comput.js";
 
-import {
-  parseISODate,
-  computeMobileFeasts,
-  computeBaptismOfTheLord,
-  computeHolyFamily,
-  addDaysISO,
-  isSunday
-} from "./comput.js";
+export function getTemporalOrdinaire(date, easter) {
 
-export function buildTemporalOrdinaire(dateISO) {
+  const year = date.getFullYear();
 
-  const { year } = parseISODate(dateISO);
-  const mobiles = computeMobileFeasts(year);
+  const ashWednesday = new Date(easter);
+  ashWednesday.setDate(easter.getDate() - 46);
 
-  const results = [];
+  const pentecost = new Date(easter);
+  pentecost.setDate(easter.getDate() + 49);
 
-  // --- Noël et octave de Noël
+  const adventStart = getAdventStart(year);
 
-  const christmas = mobiles.christmas;
+  const christmas = new Date(year,11,25);
 
-  if (dateISO === christmas) {
-    results.push(buildCelebration({
-      id: "christmas",
-      label: "Nativité du Seigneur",
-      season: "temps_de_noel",
-      rank: "solennite",
-      color: "blanc",
-      priority: 1
-    }));
-  }
+  if(date >= ashWednesday && date < easter){
 
-  const holyFamily = computeHolyFamily(year);
-
-  if (dateISO === holyFamily) {
-    results.push(buildCelebration({
-      id: "holy_family",
-      label: "Sainte Famille",
-      season: "temps_de_noel",
-      rank: "fete",
-      color: "blanc",
-      priority: 4
-    }));
-  }
-
-  if (dateISO === mobiles.epiphanyFixed) {
-    results.push(buildCelebration({
-      id: "epiphany",
-      label: "Épiphanie du Seigneur",
-      season: "temps_de_noel",
-      rank: "solennite",
-      color: "blanc",
-      priority: 1
-    }));
-  }
-
-  const baptism = computeBaptismOfTheLord(year);
-
-  if (dateISO === baptism) {
-    results.push(buildCelebration({
-      id: "baptism_lord",
-      label: "Baptême du Seigneur",
-      season: "temps_de_noel",
-      rank: "fete",
-      color: "blanc",
-      priority: 3
-    }));
-  }
-
-  // --- Carême
-
-  if (dateISO === mobiles.ashWednesday) {
-    results.push(buildCelebration({
-      id: "ash_wednesday",
-      label: "Mercredi des Cendres",
-      season: "careme",
-      rank: "jour_ferial_majeur",
-      color: "violet",
-      priority: 2,
-      privilegedSeason: true
-    }));
-  }
-
-  if (dateISO === mobiles.firstSundayOfLent) {
-    results.push(buildCelebration({
-      id: "lent_1",
-      label: "1er dimanche de Carême",
-      season: "careme",
-      rank: "dimanche",
-      color: "violet",
-      priority: 2,
-      privilegedSeason: true
-    }));
-  }
-
-  if (dateISO === mobiles.secondSundayOfLent) {
-    results.push(buildCelebration({
-      id: "lent_2",
-      label: "2e dimanche de Carême",
-      season: "careme",
-      rank: "dimanche",
-      color: "violet",
-      priority: 2,
-      privilegedSeason: true
-    }));
-  }
-
-  if (dateISO === mobiles.thirdSundayOfLent) {
-    results.push(buildCelebration({
-      id: "lent_3",
-      label: "3e dimanche de Carême",
-      season: "careme",
-      rank: "dimanche",
-      color: "violet",
-      priority: 2,
-      privilegedSeason: true
-    }));
-  }
-
-  if (dateISO === mobiles.fourthSundayOfLent) {
-    results.push(buildCelebration({
-      id: "lent_4",
-      label: "4e dimanche de Carême",
-      season: "careme",
-      rank: "dimanche",
-      color: "rose",
-      priority: 2,
-      privilegedSeason: true
-    }));
-  }
-
-  if (dateISO === mobiles.palmSunday) {
-    results.push(buildCelebration({
-      id: "palm_sunday",
-      label: "Dimanche des Rameaux",
-      season: "semaine_sainte",
-      rank: "dimanche",
-      color: "rouge",
-      priority: 1,
-      privilegedSeason: true
-    }));
-  }
-
-  if (dateISO === mobiles.goodFriday) {
-    results.push(buildCelebration({
-      id: "good_friday",
-      label: "Vendredi Saint",
-      season: "semaine_sainte",
-      rank: "celebration_du_seigneur",
-      color: "rouge",
-      priority: 1,
-      privilegedSeason: true
-    }));
-  }
-
-  // --- Temps pascal
-
-  if (dateISO === mobiles.easter) {
-    results.push(buildCelebration({
-      id: "easter",
-      label: "Dimanche de Pâques",
-      season: "temps_pascal",
-      rank: "solennite",
-      color: "blanc",
-      priority: 1
-    }));
-  }
-
-  if (dateISO === mobiles.ascension) {
-    results.push(buildCelebration({
-      id: "ascension",
-      label: "Ascension du Seigneur",
-      season: "temps_pascal",
-      rank: "solennite",
-      color: "blanc",
-      priority: 1
-    }));
-  }
-
-  if (dateISO === mobiles.pentecost) {
-    results.push(buildCelebration({
-      id: "pentecost",
-      label: "Pentecôte",
-      season: "temps_pascal",
-      rank: "solennite",
-      color: "rouge",
-      priority: 1
-    }));
-  }
-
-  if (dateISO === mobiles.trinitySunday) {
-    results.push(buildCelebration({
-      id: "trinity",
-      label: "Sainte Trinité",
-      season: "temps_ordinaire",
-      rank: "solennite",
-      color: "blanc",
-      priority: 2
-    }));
-  }
-
-  if (dateISO === mobiles.corpusChristi) {
-    results.push(buildCelebration({
-      id: "corpus_christi",
-      label: "Fête du Saint-Sacrement",
-      season: "temps_ordinaire",
-      rank: "solennite",
-      color: "blanc",
-      priority: 2
-    }));
-  }
-
-  // --- Dimanches ordinaires
-
-  if (isSunday(dateISO)) {
-
-    const label = "Dimanche du Temps ordinaire";
-
-    results.push(buildCelebration({
-      id: "ordinary_sunday",
-      label,
-      season: "temps_ordinaire",
-      rank: "dimanche",
-      color: "vert",
-      priority: 6
-    }));
+    return {
+      id:"careme",
+      label:"Temps du Carême",
+      season:{ id:"careme", label:"Carême"},
+      color:{ id:"violet", label:"violets"},
+      rank:{ id:"temps", label:"Temps liturgique"},
+      privilegedSeason:true,
+      source:"temporal"
+    };
 
   }
 
-  // --- Ferial ordinaire
+  if(date >= easter && date <= pentecost){
 
-  if (results.length === 0) {
-
-    results.push(buildCelebration({
-      id: "weekday_ordinary",
-      label: "Férie du Temps ordinaire",
-      season: "temps_ordinaire",
-      rank: "ferial",
-      color: "vert",
-      priority: 10
-    }));
+    return {
+      id:"temps_pascal",
+      label:"Temps pascal",
+      season:{ id:"paques", label:"Temps pascal"},
+      color:{ id:"blanc", label:"blancs"},
+      rank:{ id:"temps", label:"Temps liturgique"},
+      privilegedSeason:true,
+      source:"temporal"
+    };
 
   }
 
-  return results;
-}
+  if(date >= adventStart && date < christmas){
 
-function buildCelebration({
-  id,
-  label,
-  season,
-  rank,
-  color,
-  priority,
-  privilegedSeason = false
-}) {
+    return {
+      id:"avent",
+      label:"Temps de l'Avent",
+      season:{ id:"avent", label:"Avent"},
+      color:{ id:"violet", label:"violets"},
+      rank:{ id:"temps", label:"Temps liturgique"},
+      privilegedSeason:true,
+      source:"temporal"
+    };
+
+  }
+
+  const sunday = date.getDay() === 0;
+
+  if(sunday){
+
+    const sundayNumber = computeOrdinarySundayNumber(date,easter,pentecost);
+
+    return {
+
+      id:"dimanche_temps_ordinaire",
+
+      label: sundayNumber + "e dimanche du temps ordinaire",
+
+      season:{ id:"temps_ordinaire", label:"Temps ordinaire"},
+
+      color:{ id:"vert", label:"verts"},
+
+      rank:{ id:"dimanche", label:"Dimanche"},
+
+      privilegedSeason:false,
+
+      source:"temporal"
+
+    };
+
+  }
 
   return {
 
-    id,
+    id:"temps_ordinaire",
 
-    source: "temporal",
+    label:"Temps ordinaire",
 
-    celebration: {
-      id,
-      label
-    },
+    season:{ id:"temps_ordinaire", label:"Temps ordinaire"},
 
-    season: {
-      id: season,
-      label: mapSeason(season)
-    },
+    color:{ id:"vert", label:"verts"},
 
-    rank: {
-      id: rank,
-      label: mapRank(rank)
-    },
+    rank:{ id:"ferie", label:"Férie"},
 
-    color: {
-      id: color,
-      label: mapColor(color)
-    },
+    privilegedSeason:false,
 
-    privilegedSeason,
-
-    priority
+    source:"temporal"
 
   };
 
 }
 
-function mapSeason(id) {
+function computeOrdinarySundayNumber(date,easter,pentecost){
 
-  const map = {
+  const baptism = getBaptismOfLord(date.getFullYear());
 
-    temps_de_noel: "Temps de Noël",
-    careme: "Carême",
-    semaine_sainte: "Semaine sainte",
-    temps_pascal: "Temps pascal",
-    temps_ordinaire: "Temps ordinaire"
+  const firstPeriodStart = new Date(baptism);
+  firstPeriodStart.setDate(baptism.getDate()+1);
 
-  };
+  if(date < easter){
 
-  return map[id] || id;
+    const diff = daysBetween(firstPeriodStart,date);
 
-}
+    return Math.floor(diff/7)+1;
 
-function mapRank(id) {
+  }
 
-  const map = {
+  const resume = new Date(pentecost);
+  resume.setDate(pentecost.getDate()+7);
 
-    solennite: "Solennité",
-    fete: "Fête",
-    dimanche: "Dimanche",
-    ferial: "Férie",
-    jour_ferial_majeur: "Jour férial majeur",
-    celebration_du_seigneur: "Célébration du Seigneur"
+  const diff = daysBetween(resume,date);
 
-  };
-
-  return map[id] || id;
+  return Math.floor(diff/7)+1+6;
 
 }
 
-function mapColor(id) {
+function getBaptismOfLord(year){
 
-  const map = {
+  const epiphany = new Date(year,0,6);
 
-    blanc: "ornements blancs",
-    rouge: "ornements rouges",
-    vert: "ornements verts",
-    violet: "ornements violets",
-    rose: "ornements roses"
+  const sunday = new Date(epiphany);
 
-  };
+  sunday.setDate(epiphany.getDate() + (7 - epiphany.getDay()));
 
-  return map[id] || id;
+  return sunday;
+
+}
+
+function getAdventStart(year){
+
+  const christmas = new Date(year,11,25);
+
+  const sunday = new Date(christmas);
+
+  sunday.setDate(christmas.getDate() - christmas.getDay());
+
+  sunday.setDate(sunday.getDate() - 21);
+
+  return sunday;
 
 }
