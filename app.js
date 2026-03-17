@@ -3,8 +3,8 @@
    Version robuste et conforme aux dernières décisions
    ========================================================= */
 
-const STORAGE_KEY_GLOBAL = "fdm_global_v3";
-const STORAGE_KEY_RITE_PREFIX = "fdm_rite_v3_";
+const STORAGE_KEY_GLOBAL = "fdm_global_v4";
+const STORAGE_KEY_RITE_PREFIX = "fdm_rite_v4_";
 
 const SECTIONS = {
   ordinaire: [
@@ -329,7 +329,6 @@ async function init() {
     await loadChants();
 
     bindEvents();
-    ensureFavoritesModal();
 
     if (state.rite && SECTIONS[state.rite]) {
       const saved = loadRiteState(state.rite);
@@ -406,6 +405,12 @@ function bindEvents() {
   if (downloadButton) {
     downloadButton.addEventListener("click", () => window.print());
   }
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && state.ui.favoritesOpen) {
+      closeFavoritesModal();
+    }
+  });
 }
 
 function bindDateCard() {
@@ -480,7 +485,7 @@ function onRiteSelect(rite) {
 
   state.rite = rite;
   state.currentSearch = "";
-  state.ui.favoritesOpen = false;
+  closeFavoritesModal();
 
   if (hasResumeForRite(rite)) {
     const reprendre = window.confirm("Un brouillon local existe pour ce rite. Reprendre ?");
@@ -717,15 +722,15 @@ function getRankedSuggestions(section) {
 ================================ */
 
 function ensureFavoritesModal() {
-  if (byId("favoritesModal")) return;
+  let modal = byId("favoritesModal");
+  if (modal) return modal;
 
-  const modal = document.createElement("div");
+  modal = document.createElement("div");
   modal.id = "favoritesModal";
-  modal.hidden = true;
   modal.style.position = "fixed";
   modal.style.inset = "0";
   modal.style.background = "rgba(0,0,0,0.28)";
-  modal.style.display = "flex";
+  modal.style.display = "none";
   modal.style.alignItems = "center";
   modal.style.justifyContent = "center";
   modal.style.padding = "24px";
@@ -769,24 +774,22 @@ function ensureFavoritesModal() {
       closeFavoritesModal();
     }
   });
+
+  return modal;
 }
 
 function openFavoritesModal() {
-  ensureFavoritesModal();
+  const modal = ensureFavoritesModal();
   state.ui.favoritesOpen = true;
   renderFavoritesModal();
-
-  const modal = byId("favoritesModal");
-  if (modal) {
-    modal.hidden = false;
-  }
+  modal.style.display = "flex";
 }
 
 function closeFavoritesModal() {
   state.ui.favoritesOpen = false;
   const modal = byId("favoritesModal");
   if (modal) {
-    modal.hidden = true;
+    modal.style.display = "none";
   }
 }
 
