@@ -64,6 +64,12 @@ async function init() {
 
   bindEvents();
   render();
+
+  if (state.rite) {
+    showScreen(2);
+  } else {
+    showScreen(1);
+  }
 }
 
 /* ===============================
@@ -86,24 +92,29 @@ EVENEMENTS
 ================================ */
 
 function bindEvents() {
-  document.getElementById("dateInput")
-    .addEventListener("change", onDateChange);
+  const dateInput = document.getElementById("dateInput");
+  if (dateInput) {
+    dateInput.addEventListener("change", onDateChange);
+  }
 
-  document.querySelectorAll("[data-rite]")
-    .forEach((btn) => {
-      btn.addEventListener("click", () => onRiteSelect(btn.dataset.rite));
-    });
+  document.querySelectorAll("[data-rite]").forEach((btn) => {
+    btn.addEventListener("click", () => onRiteSelect(btn.dataset.rite));
+  });
 
-  document.getElementById("prev")
-    .addEventListener("click", prevSection);
+  const prevBtn = document.getElementById("prev");
+  if (prevBtn) {
+    prevBtn.addEventListener("click", prevSection);
+  }
 
-  document.getElementById("next")
-    .addEventListener("click", nextSection);
+  const nextBtn = document.getElementById("next");
+  if (nextBtn) {
+    nextBtn.addEventListener("click", nextSection);
+  }
 
-  document.getElementById("backToSetup")
-    .addEventListener("click", () => {
-      showScreen(1);
-    });
+  const backBtn = document.getElementById("backToSetup");
+  if (backBtn) {
+    backBtn.addEventListener("click", () => showScreen(1));
+  }
 
   bindDateCard();
 }
@@ -151,14 +162,10 @@ function onRiteSelect(rite) {
   state.rite = rite;
   state.currentSectionIndex = 0;
 
-  if (!state.selectedBySection || typeof state.selectedBySection !== "object") {
-    state.selectedBySection = {};
-  }
-
   updateLiturgicalInfo();
   saveLocalState();
-  showScreen(2);
   render();
+  showScreen(2);
 }
 
 /* ===============================
@@ -195,7 +202,7 @@ function getNextSunday() {
   const now = new Date();
   const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
-  const day = date.getDay(); // 0 = dimanche
+  const day = date.getDay();
   const offset = day === 0 ? 7 : 7 - day;
 
   date.setDate(date.getDate() + offset);
@@ -222,7 +229,7 @@ function updateLiturgicalInfo() {
 
   const effectiveDate = state.date || getNextSunday();
 
-  if (!window.calculerTempsLiturgique) {
+  if (typeof window.calculerTempsLiturgique !== "function") {
     state.liturgicalInfo = null;
     return;
   }
@@ -243,8 +250,13 @@ function showScreen(screenNumber) {
   const screen1 = document.getElementById("screen1");
   const screen2 = document.getElementById("screen2");
 
-  screen1.classList.toggle("active", screenNumber === 1);
-  screen2.classList.toggle("active", screenNumber === 2);
+  if (screen1) {
+    screen1.classList.toggle("active", screenNumber === 1);
+  }
+
+  if (screen2) {
+    screen2.classList.toggle("active", screenNumber === 2);
+  }
 }
 
 /* ===============================
@@ -348,7 +360,6 @@ function getRankedSuggestions(section) {
   results.sort((a, b) => b.score - a.score);
 
   const liked = results.filter((x) => state.likes[x.chant.id]);
-
   if (liked.length) {
     const topLiked = liked[0];
     results.splice(results.indexOf(topLiked), 1);
@@ -456,14 +467,14 @@ FEUILLE A4
 ================================ */
 
 function renderSheet() {
-  const title = state.liturgicalInfo?.display?.title || "";
-  const subtitle = state.liturgicalInfo?.display?.subtitle || "";
-
-  document.getElementById("sheetTitle").textContent = title;
-  document.getElementById("sheetSubtitle").textContent = subtitle;
-
+  const titleEl = document.getElementById("sheetTitle");
+  const subtitleEl = document.getElementById("sheetSubtitle");
   const container = document.getElementById("sheetContent");
-  if (!container) return;
+
+  if (!titleEl || !subtitleEl || !container) return;
+
+  titleEl.textContent = state.liturgicalInfo?.display?.title || "";
+  subtitleEl.textContent = state.liturgicalInfo?.display?.subtitle || "";
 
   container.innerHTML = "";
 
