@@ -1,215 +1,125 @@
-// calendrier/sanctoral_ordinaire.js
+export function getSanctoralOrdinaire(date){
 
-import { parseISODate } from "./comput.js";
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
 
-export function getSanctoralOrdinaireForDate(dateISO) {
+  const key = `${month}-${day}`;
 
-  const { month, day } = parseISODate(dateISO);
+  const table = SANCTORAL_ORDINAIRE[key];
 
-  const key = `${String(month).padStart(2,"0")}-${String(day).padStart(2,"0")}`;
-
-  const entry = SANCTORAL[key];
-
-  if (!entry) {
-    return [];
+  if(!table){
+    return null;
   }
 
-  return entry.map(e => buildCelebration(e));
+  return {
+    id: table.id,
+    label: table.label,
+    rank: table.rank,
+    color: table.color,
+    source: "sanctoral",
+    priority: table.priority
+  };
 
 }
 
-const SANCTORAL = {
 
-  "01-01": [
-    {
-      id: "mary_mother_of_god",
-      label: "Marie, Mère de Dieu",
-      rank: "solennite",
-      color: "blanc",
-      priority: 1
-    }
-  ],
 
-  "01-06": [
-    {
-      id: "epiphany",
-      label: "Épiphanie du Seigneur",
-      rank: "solennite",
-      color: "blanc",
-      priority: 1
-    }
-  ],
+const SANCTORAL_ORDINAIRE = {
 
-  "02-02": [
-    {
-      id: "presentation",
-      label: "Présentation du Seigneur",
-      rank: "fete_du_seigneur",
-      color: "blanc",
-      priority: 2
-    }
-  ],
+  "1-1": {
+    id:"marie_mere_de_dieu",
+    label:"Sainte Marie, Mère de Dieu",
+    rank:{ id:"solennite", label:"Solennité"},
+    color:{ id:"blanc", label:"blancs"},
+    priority:1
+  },
 
-  "03-19": [
-    {
-      id: "st_joseph",
-      label: "Saint Joseph, époux de la Vierge Marie",
-      rank: "solennite",
-      color: "blanc",
-      priority: 2
-    }
-  ],
+  "1-6": {
+    id:"epiphanie",
+    label:"Épiphanie du Seigneur",
+    rank:{ id:"solennite", label:"Solennité"},
+    color:{ id:"blanc", label:"blancs"},
+    priority:1
+  },
 
-  "03-25": [
-    {
-      id: "annunciation",
-      label: "Annonciation du Seigneur",
-      rank: "solennite",
-      color: "blanc",
-      priority: 2
-    }
-  ],
+  "2-2": {
+    id:"presentation",
+    label:"Présentation du Seigneur",
+    rank:{ id:"fete", label:"Fête"},
+    color:{ id:"blanc", label:"blancs"},
+    priority:3
+  },
 
-  "06-24": [
-    {
-      id: "nativity_john_baptist",
-      label: "Nativité de saint Jean-Baptiste",
-      rank: "solennite",
-      color: "blanc",
-      priority: 2
-    }
-  ],
+  "3-19": {
+    id:"saint_joseph",
+    label:"Saint Joseph, époux de la Vierge Marie",
+    rank:{ id:"solennite", label:"Solennité"},
+    color:{ id:"blanc", label:"blancs"},
+    priority:1
+  },
 
-  "06-29": [
-    {
-      id: "peter_paul",
-      label: "Saints Pierre et Paul",
-      rank: "solennite",
-      color: "rouge",
-      priority: 2
-    }
-  ],
+  "3-25": {
+    id:"annonciation",
+    label:"Annonciation du Seigneur",
+    rank:{ id:"solennite", label:"Solennité"},
+    color:{ id:"blanc", label:"blancs"},
+    priority:1
+  },
 
-  "08-15": [
-    {
-      id: "assumption",
-      label: "Assomption de la Vierge Marie",
-      rank: "solennite",
-      color: "blanc",
-      priority: 2
-    }
-  ],
+  "6-24": {
+    id:"jean_baptiste",
+    label:"Nativité de saint Jean Baptiste",
+    rank:{ id:"solennite", label:"Solennité"},
+    color:{ id:"blanc", label:"blancs"},
+    priority:1
+  },
 
-  "11-01": [
-    {
-      id: "all_saints",
-      label: "Toussaint",
-      rank: "solennite",
-      color: "blanc",
-      priority: 2
-    }
-  ],
+  "6-29": {
+    id:"pierre_paul",
+    label:"Saints Pierre et Paul",
+    rank:{ id:"solennite", label:"Solennité"},
+    color:{ id:"rouge", label:"rouges"},
+    priority:1
+  },
 
-  "11-02": [
-    {
-      id: "all_souls",
-      label: "Commémoration des fidèles défunts",
-      rank: "commemoration",
-      color: "violet",
-      priority: 3
-    }
-  ],
+  "8-15": {
+    id:"assomption",
+    label:"Assomption de la Vierge Marie",
+    rank:{ id:"solennite", label:"Solennité"},
+    color:{ id:"blanc", label:"blancs"},
+    priority:1
+  },
 
-  "12-08": [
-    {
-      id: "immaculate_conception",
-      label: "Immaculée Conception",
-      rank: "solennite",
-      color: "blanc",
-      priority: 2
-    }
-  ],
+  "11-1": {
+    id:"toussaint",
+    label:"Tous les saints",
+    rank:{ id:"solennite", label:"Solennité"},
+    color:{ id:"blanc", label:"blancs"},
+    priority:1
+  },
 
-  "12-25": [
-    {
-      id: "christmas",
-      label: "Nativité du Seigneur",
-      rank: "solennite",
-      color: "blanc",
-      priority: 1
-    }
-  ]
+  "11-2": {
+    id:"defunts",
+    label:"Commémoration de tous les fidèles défunts",
+    rank:{ id:"commemoration", label:"Commémoration"},
+    color:{ id:"violet", label:"violets"},
+    priority:2
+  },
+
+  "12-8": {
+    id:"immaculee_conception",
+    label:"Immaculée Conception",
+    rank:{ id:"solennite", label:"Solennité"},
+    color:{ id:"blanc", label:"blancs"},
+    priority:1
+  },
+
+  "12-25": {
+    id:"noel",
+    label:"Nativité du Seigneur",
+    rank:{ id:"solennite", label:"Solennité"},
+    color:{ id:"blanc", label:"blancs"},
+    priority:1
+  }
 
 };
-
-function buildCelebration({
-
-  id,
-  label,
-  rank,
-  color,
-  priority
-
-}) {
-
-  return {
-
-    id,
-
-    source: "sanctoral",
-
-    celebration: {
-      id,
-      label
-    },
-
-    rank: {
-      id: rank,
-      label: mapRank(rank)
-    },
-
-    color: {
-      id: color,
-      label: mapColor(color)
-    },
-
-    priority,
-
-    season: {
-      id: "sanctoral",
-      label: "Sanctoral"
-    }
-
-  };
-
-}
-
-function mapRank(id) {
-
-  const map = {
-
-    solennite: "Solennité",
-    fete: "Fête",
-    fete_du_seigneur: "Fête du Seigneur",
-    commemoration: "Commémoration"
-
-  };
-
-  return map[id] || id;
-
-}
-
-function mapColor(id) {
-
-  const map = {
-
-    blanc: "ornements blancs",
-    rouge: "ornements rouges",
-    vert: "ornements verts",
-    violet: "ornements violets"
-
-  };
-
-  return map[id] || id;
-
-}
