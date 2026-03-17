@@ -1,32 +1,29 @@
-// calendrier/precedence_ordinaire.js
+export function resolveOrdinairePrecedence(candidates){
 
-export function resolveOrdinairePrecedence(candidates, dateISO) {
-
-  if (!Array.isArray(candidates) || candidates.length === 0) {
+  if(!Array.isArray(candidates) || candidates.length === 0){
     return {
-      winner: null,
-      omittedCelebrations: []
+      winner:null,
+      omittedCelebrations:[]
     };
   }
 
   const sorted = [...candidates].sort(compareCelebrations);
 
-  const winner = sorted[0];
-  const omittedCelebrations = sorted.slice(1);
-
   return {
-    winner,
-    omittedCelebrations
+    winner:sorted[0],
+    omittedCelebrations:sorted.slice(1)
   };
 
 }
 
-function compareCelebrations(a, b) {
+
+
+function compareCelebrations(a,b){
 
   const pa = precedenceScore(a);
   const pb = precedenceScore(b);
 
-  if (pa !== pb) {
+  if(pa !== pb){
     return pa - pb;
   }
 
@@ -37,28 +34,30 @@ function compareCelebrations(a, b) {
 
 }
 
-function precedenceScore(c) {
 
-  const rank = c.rank?.id;
 
-  switch (rank) {
+function precedenceScore(c){
+
+  const rank = c?.rank?.id;
+
+  switch(rank){
 
     case "solennite":
       return 1;
 
-    case "dimanche":
+    case "fete":
       return 2;
 
-    case "fete_du_seigneur":
+    case "dimanche":
       return 3;
 
-    case "fete":
+    case "memorial":
       return 4;
 
     case "commemoration":
       return 5;
 
-    case "ferial":
+    case "ferie":
       return 6;
 
     default:
