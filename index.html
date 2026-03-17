@@ -179,48 +179,93 @@ color:#555;
 }
 
 .search{
-margin-bottom:15px;
+margin-bottom:12px;
 }
 
-.chants{
-flex:1;
-}
-
-.chant{
-border:1px solid #ddd;
-border-radius:12px;
-padding:12px;
-margin-bottom:10px;
+.middle-toolbar{
 display:flex;
-align-items:center;
-justify-content:space-between;
 gap:10px;
+margin-bottom:12px;
 }
 
-.chant-title{
-font-weight:600;
-flex:1;
-}
-
-.chant-actions{
-display:flex;
-align-items:center;
-gap:8px;
-}
-
-.chant-actions button{
-padding:8px 10px;
+.middle-toolbar button{
+padding:10px 12px;
 border-radius:10px;
 border:1px solid #ccc;
 background:white;
 cursor:pointer;
 }
 
+.chants{
+display:flex;
+flex-direction:column;
+gap:10px;
+min-height:240px;
+}
+
+.chant{
+border:1px solid #ddd;
+border-radius:12px;
+padding:12px 14px;
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:12px;
+cursor:pointer;
+background:#fff;
+transition:background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+user-select:none;
+}
+
+.chant:hover{
+border-color:#bfb7aa;
+box-shadow:0 4px 10px rgba(0,0,0,0.05);
+}
+
+.chant.selected{
+background:#ece8df;
+border-color:#cbbfb0;
+}
+
+.chant-main{
+display:flex;
+align-items:center;
+gap:10px;
+min-width:0;
+flex:1;
+}
+
+.chant-like{
+width:32px;
+height:32px;
+border-radius:10px;
+border:1px solid #ccc;
+background:white;
+cursor:pointer;
+flex:0 0 auto;
+}
+
+.chant-title{
+font-weight:600;
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+min-width:0;
+}
+
+.chant-empty{
+padding:14px;
+border:1px dashed #d2cbc0;
+border-radius:12px;
+color:#666;
+background:#fbfaf7;
+}
+
 .nav-buttons{
 display:grid;
 grid-template-columns:1fr 1fr;
 gap:10px;
-margin-top:10px;
+margin-top:12px;
 }
 
 .nav-buttons button{
@@ -268,12 +313,123 @@ margin-bottom:20px;
 }
 
 .sheet-section{
-margin-bottom:15px;
+margin-bottom:18px;
+padding:8px 0;
+border-top:1px solid #ece6dc;
 }
 
-.sheet-section h3{
+.sheet-section:first-child{
+border-top:none;
+padding-top:0;
+}
+
+.sheet-section-header{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:12px;
+margin-bottom:8px;
+}
+
+.sheet-section-header h3{
 font-size:1rem;
-margin-bottom:6px;
+margin:0;
+}
+
+.sheet-dropzone{
+min-height:12px;
+border-radius:10px;
+transition:background 0.15s ease, outline-color 0.15s ease;
+}
+
+.sheet-dropzone.active{
+background:#f7f1eb;
+outline:2px dashed #cbbfb0;
+outline-offset:4px;
+}
+
+.sheet-chant-item{
+border:1px solid #ddd6ca;
+border-radius:12px;
+padding:10px 12px;
+margin-bottom:10px;
+background:#fff;
+cursor:grab;
+}
+
+.sheet-chant-item:active{
+cursor:grabbing;
+}
+
+.sheet-chant-top{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:10px;
+margin-bottom:8px;
+}
+
+.sheet-chant-title{
+font-weight:700;
+}
+
+.sheet-chant-actions{
+display:flex;
+align-items:center;
+gap:8px;
+flex-wrap:wrap;
+}
+
+.sheet-chant-actions button{
+padding:6px 9px;
+border-radius:8px;
+border:1px solid #ccc;
+background:white;
+cursor:pointer;
+}
+
+.sheet-chant-body{
+display:flex;
+flex-direction:column;
+gap:10px;
+}
+
+.sheet-refrain,
+.sheet-couplet{
+padding:8px 10px;
+border-radius:10px;
+background:#faf8f4;
+}
+
+.sheet-refrain-label,
+.sheet-couplet-label{
+font-size:0.82rem;
+font-weight:700;
+margin-bottom:4px;
+color:#555;
+}
+
+.sheet-couplet-head{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:8px;
+margin-bottom:4px;
+}
+
+.couplet-remove{
+border:none;
+background:none;
+font-size:1rem;
+line-height:1;
+cursor:pointer;
+padding:0 4px;
+color:#6b2b2b;
+}
+
+.sheet-empty{
+color:#666;
+padding:14px 0;
 }
 
 .download{
@@ -298,16 +454,35 @@ color:#444;
 }
 
 .section-pill{
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:10px;
+width:100%;
 padding:8px 10px;
 border-radius:10px;
 background:#f6f3ee;
 margin-bottom:8px;
 font-size:0.92rem;
+border:1px solid transparent;
+cursor:pointer;
+text-align:left;
 }
 
 .section-pill.active{
 background:#efe5e5;
 border:1px solid #d8bcbc;
+}
+
+.section-pill-count{
+font-weight:700;
+color:#6b2b2b;
+}
+
+.section-summary-empty{
+font-size:0.92rem;
+color:#666;
+padding:10px 0;
 }
 
 .back-link{
@@ -337,7 +512,7 @@ min-height:auto;
 
 <header>
 <h1>Feuille de Messe</h1>
-<p>Préparez votre feuille de messe à partir de la date, du rite et des chants.</p>
+<p>Qui bien chante, deux fois prie.</p>
 </header>
 
 <div class="container">
@@ -393,6 +568,10 @@ Date de la messe
 <div class="section-subtitle" id="sectionSubtitle"></div>
 
 <input id="chantSearch" class="search" type="text" placeholder="Rechercher un chant">
+
+<div class="middle-toolbar">
+<button id="refreshSuggestions" type="button">Rafraîchir</button>
+</div>
 
 <div id="chants" class="chants"></div>
 
