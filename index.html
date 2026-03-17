@@ -7,7 +7,6 @@
 <title>Feuille de Messe</title>
 
 <style>
-
 body{
 margin:0;
 font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
@@ -21,12 +20,12 @@ padding:20px 0 10px 0;
 }
 
 header h1{
-font-size:1.5rem;
+font-size:1.35rem;
 margin:0;
 }
 
 header p{
-font-size:0.9rem;
+font-size:0.88rem;
 color:#666;
 margin-top:6px;
 }
@@ -62,20 +61,83 @@ display:block;
 margin-bottom:6px;
 }
 
+.field-hint{
+font-weight:400;
+font-size:0.92rem;
+color:#666;
+margin-top:4px;
+}
+
+.date-card{
+display:block;
+width:100%;
+background:white;
+border:1px solid #d7d1c6;
+border-radius:16px;
+padding:16px;
+cursor:pointer;
+transition:border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+box-sizing:border-box;
+}
+
+.date-card:hover{
+border-color:#b9b0a2;
+box-shadow:0 4px 14px rgba(0,0,0,0.06);
+}
+
+.date-card:focus-within{
+border-color:#8f1d1d;
+box-shadow:0 0 0 3px rgba(143,29,29,0.12);
+}
+
+.date-card-label{
+font-size:1rem;
+font-weight:600;
+margin-bottom:10px;
+}
+
+.date-input-wrap{
+display:flex;
+align-items:center;
+gap:12px;
+}
+
+.date-icon{
+font-size:1.35rem;
+line-height:1;
+}
+
 input[type="date"], input[type="text"]{
 width:100%;
 padding:10px;
 border-radius:10px;
 border:1px solid #ccc;
+box-sizing:border-box;
+}
+
+.date-card input[type="date"]{
+font-size:1.08rem;
+padding:14px 16px;
+min-height:54px;
+border:1px solid #cfc7ba;
+border-radius:12px;
+background:#fff;
+cursor:pointer;
+}
+
+.date-card input[type="date"]::-webkit-calendar-picker-indicator{
+cursor:pointer;
+transform:scale(1.2);
 }
 
 .rites{
 display:flex;
 gap:10px;
+flex-wrap:wrap;
 }
 
 .rite{
-padding:10px 16px;
+padding:12px 16px;
 border:1px solid #ccc;
 border-radius:10px;
 background:white;
@@ -84,8 +146,9 @@ cursor:pointer;
 
 .workspace{
 display:grid;
-grid-template-columns:260px 1fr auto;
+grid-template-columns:260px minmax(320px, 1fr) minmax(320px, 1fr);
 gap:20px;
+align-items:start;
 }
 
 .left{
@@ -112,6 +175,7 @@ margin-bottom:4px;
 .section-subtitle{
 font-size:0.95rem;
 margin-bottom:10px;
+color:#555;
 }
 
 .search{
@@ -125,8 +189,31 @@ flex:1;
 .chant{
 border:1px solid #ddd;
 border-radius:12px;
-padding:10px;
+padding:12px;
 margin-bottom:10px;
+display:flex;
+align-items:center;
+justify-content:space-between;
+gap:10px;
+}
+
+.chant-title{
+font-weight:600;
+flex:1;
+}
+
+.chant-actions{
+display:flex;
+align-items:center;
+gap:8px;
+}
+
+.chant-actions button{
+padding:8px 10px;
+border-radius:10px;
+border:1px solid #ccc;
+background:white;
+cursor:pointer;
 }
 
 .nav-buttons{
@@ -164,6 +251,7 @@ min-height:297mm;
 background:white;
 padding:20mm 18mm;
 box-shadow:0 10px 25px rgba(0,0,0,0.15);
+box-sizing:border-box;
 }
 
 .sheet-title{
@@ -198,6 +286,50 @@ color:white;
 cursor:pointer;
 }
 
+.summary-title{
+font-weight:700;
+margin-bottom:8px;
+}
+
+.summary-line{
+font-size:0.95rem;
+margin-bottom:6px;
+color:#444;
+}
+
+.section-pill{
+padding:8px 10px;
+border-radius:10px;
+background:#f6f3ee;
+margin-bottom:8px;
+font-size:0.92rem;
+}
+
+.section-pill.active{
+background:#efe5e5;
+border:1px solid #d8bcbc;
+}
+
+.back-link{
+margin-bottom:14px;
+padding:0;
+background:none;
+border:none;
+cursor:pointer;
+font:inherit;
+color:#6b2b2b;
+text-align:left;
+}
+
+@media (max-width: 1100px){
+.workspace{
+grid-template-columns:1fr;
+}
+.sheet{
+width:100%;
+min-height:auto;
+}
+}
 </style>
 </head>
 
@@ -210,18 +342,24 @@ cursor:pointer;
 
 <div class="container">
 
-<!-- Écran 1 -->
-
 <section id="screen1" class="screen active panel">
 
 <div class="field">
-<label>
-Date de la messe<br>
-<span style="font-weight:400;font-size:0.9rem">
-(sert à déterminer le temps liturgique et la célébration du jour)
-</span>
+<label for="dateInput">
+Date de la messe
 </label>
+
+<div id="dateCard" class="date-card" role="button" tabindex="0" aria-label="Ouvrir le calendrier">
+<div class="date-card-label">Choisir une date</div>
+<div class="date-input-wrap">
+<div class="date-icon">📅</div>
 <input id="dateInput" type="date">
+</div>
+</div>
+
+<div class="field-hint">
+(sert à déterminer le temps liturgique et la célébration du jour)
+</div>
 </div>
 
 <div class="field">
@@ -231,7 +369,6 @@ Date de la messe<br>
 <button class="rite" data-rite="ordinaire">Rite ordinaire</button>
 <button class="rite" data-rite="extraordinaire">Rite extraordinaire</button>
 </div>
-
 </div>
 
 <div class="field">
@@ -241,24 +378,17 @@ Date de la messe<br>
 
 </section>
 
-
-<!-- Écran 2 -->
-
 <section id="screen2" class="screen">
 
 <div class="workspace">
 
 <div class="left">
-
+<button id="backToSetup" class="back-link">← Revenir au paramétrage</button>
 <div id="summary"></div>
-
 <div id="sections"></div>
-
 </div>
 
-
 <div class="middle">
-
 <div class="section-title" id="sectionTitle"></div>
 <div class="section-subtitle" id="sectionSubtitle"></div>
 
@@ -272,27 +402,18 @@ Date de la messe<br>
 </div>
 
 <button id="favoritesButton" class="favorites">Favoris</button>
-
 </div>
-
 
 <div class="sheet-zone">
-
 <div class="sheet">
-
 <h2 id="sheetTitle" class="sheet-title"></h2>
 <div id="sheetSubtitle" class="sheet-subtitle"></div>
-
 <div id="sheetContent"></div>
-
 <button id="download" class="download">Télécharger la feuille</button>
-
+</div>
 </div>
 
 </div>
-
-</div>
-
 </section>
 
 </div>
