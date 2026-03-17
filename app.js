@@ -281,35 +281,7 @@ function extractAvailableCarnets(chants) {
    CALCUL LITURGIQUE
 ================================ */
 
-function updateLiturgicalInfo() {
-  if (!state.rite) {
-    state.liturgicalInfo = null;
-    return;
-  }
 
-  const effectiveDate = state.date || getNextSundayISO();
-
-  if (typeof window.calculerTempsLiturgique !== "function") {
-    state.liturgicalInfo = {
-      display: { title: "", subtitle: "" },
-      season: {}
-    };
-    return;
-  }
-
-  try {
-    state.liturgicalInfo = window.calculerTempsLiturgique(effectiveDate, state.rite) || {
-      display: { title: "", subtitle: "" },
-      season: {}
-    };
-  } catch (error) {
-    console.error("Erreur de calcul liturgique :", error);
-    state.liturgicalInfo = {
-      display: { title: "", subtitle: "" },
-      season: {}
-    };
-  }
-}
 
 /* ===============================
    INITIALISATION
