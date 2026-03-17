@@ -3,476 +3,570 @@ ETAT GLOBAL
 ================================ */
 
 const state = {
+  chants: [],
+  chantsById: new Map(),
 
-chants:[],
-chantsById:new Map(),
+  rite: "",
+  date: "",
 
-rite:"",
-date:"",
+  liturgicalInfo: null,
 
-liturgicalInfo:null,
+  currentSectionIndex: 0,
 
-currentSectionIndex:0,
-
-selectedBySection:{},
-
-likes:{}
-
+  selectedBySection: {},
+  likes: {}
 };
-
 
 /* ===============================
 SECTIONS PAR RITE
 ================================ */
 
 const SECTIONS = {
-
-ordinaire:[
-"Entrée",
-"Kyrie",
-"Gloria",
-"Psaume",
-"Credo",
-"Offertoire",
-"Sanctus",
-"Anamnèse",
-"Amen",
-"Agnus Dei",
-"Communion",
-"Envoi"
-],
-
-extraordinaire:[
-"Introït",
-"Kyrie",
-"Gloria",
-"Credo",
-"Offertoire",
-"Sanctus",
-"Agnus Dei",
-"Communion",
-"Antienne mariale"
-]
-
+  ordinaire: [
+    "Entrée",
+    "Kyrie",
+    "Gloria",
+    "Psaume",
+    "Credo",
+    "Offertoire",
+    "Sanctus",
+    "Anamnèse",
+    "Amen",
+    "Agnus Dei",
+    "Communion",
+    "Envoi"
+  ],
+  extraordinaire: [
+    "Introït",
+    "Kyrie",
+    "Gloria",
+    "Credo",
+    "Offertoire",
+    "Sanctus",
+    "Agnus Dei",
+    "Communion",
+    "Antienne mariale"
+  ]
 };
-
-
 
 /* ===============================
 INITIALISATION
 ================================ */
 
-document.addEventListener("DOMContentLoaded",init);
+document.addEventListener("DOMContentLoaded", init);
 
-async function init(){
+async function init() {
+  await loadChants();
 
-await loadChants();
+  restoreLocalState();
+  ensureDefaultDate();
+  updateLiturgicalInfo();
 
-restoreLocalState();
-
-bindEvents();
-
-render();
-
+  bindEvents();
+  render();
 }
-
-
 
 /* ===============================
 CHARGEMENT CHANTS
 ================================ */
 
-async function loadChants(){
+async function loadChants() {
+  const res = await fetch("./chants.json");
+  const data = await res.json();
 
-const res = await fetch("./chants.json");
+  state.chants = Array.isArray(data) ? data : [];
 
-const data = await res.json();
-
-state.chants = data;
-
-state.chants.forEach(c=>{
-state.chantsById.set(c.id,c);
-});
-
+  state.chants.forEach((chant) => {
+    state.chantsById.set(chant.id, chant);
+  });
 }
-
-
 
 /* ===============================
 EVENEMENTS
 ================================ */
 
-function bindEvents(){
+function bindEvents() {
+  document.getElementById("dateInput")
+    .addEventListener("change", onDateChange);
 
-document.getElementById("dateInput")
-.addEventListener("change",onDateChange);
+  document.querySelectorAll("[data-rite]")
+    .forEach((btn) => {
+      btn.addEventListener("click", () => onRiteSelect(btn.dataset.rite));
+    });
 
-document.querySelectorAll("[data-rite]")
-.forEach(btn=>{
-btn.addEventListener("click",()=>onRiteSelect(btn.dataset.rite));
-});
+  document.getElementById("prev")
+    .addEventListener("click", prevSection);
 
-document.getElementById("prev")
-.addEventListener("click",prevSection);
+  document.getElementById("next")
+    .addEventListener("click", nextSection);
 
-document.getElementById("next")
-.addEventListener("click",nextSection);
+  document.getElementById("backToSetup")
+    .addEventListener("click", () => {
+      showScreen(1);
+    });
 
+  bindDateCard();
 }
 
+/* ===============================
+DATE : CARTOUCHE CLIQUABLE
+================================ */
 
+function bindDateCard() {
+  const card = document.getElementById("dateCard");
+  const input = document.getElementById("dateInput");
+
+  if (!card || !input) return;
+
+  const openPicker = () => {
+    input.focus();
+
+    if (typeof input.showPicker === "function") {
+      input.showPicker();
+    } else {
+      input.click();
+    }
+  };
+
+  card.addEventListener("click", (event) => {
+    if (event.target === input) return;
+    openPicker();
+  });
+
+  card.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openPicker();
+    }
+  });
+}
 
 /* ===============================
 RITE
 ================================ */
 
-function onRiteSelect(rite){
+function onRiteSelect(rite) {
+  if (!SECTIONS[rite]) return;
 
-state.rite = rite;
+  state.rite = rite;
+  state.currentSectionIndex = 0;
 
-state.currentSectionIndex = 0;
+  if (!state.selectedBySection || typeof state.selectedBySection !== "object") {
+    state.selectedBySection = {};
+  }
 
-updateLiturgicalInfo();
-
-render();
-
+  updateLiturgicalInfo();
+  saveLocalState();
+  showScreen(2);
+  render();
 }
-
-
 
 /* ===============================
 DATE
 ================================ */
 
-function onDateChange(e){
+function onDateChange(e) {
+  state.date = e.target.value || "";
 
-state.date = e.target.value;
-
-updateLiturgicalInfo();
-
-render();
-
+  updateLiturgicalInfo();
+  saveLocalState();
+  render();
 }
 
+/* ===============================
+AIDE DATE
+================================ */
 
+function ensureDefaultDate() {
+  const input = document.getElementById("dateInput");
+  if (!input) return;
+
+  if (state.date) {
+    input.value = state.date;
+    return;
+  }
+
+  const nextSunday = getNextSunday();
+  state.date = nextSunday;
+  input.value = nextSunday;
+}
+
+function getNextSunday() {
+  const now = new Date();
+  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  const day = date.getDay(); // 0 = dimanche
+  const offset = day === 0 ? 7 : 7 - day;
+
+  date.setDate(date.getDate() + offset);
+
+  return toISODate(date);
+}
+
+function toISODate(date) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
 
 /* ===============================
 CALCUL LITURGIQUE
 ================================ */
 
-function updateLiturgicalInfo(){
+function updateLiturgicalInfo() {
+  if (!state.rite) {
+    state.liturgicalInfo = null;
+    return;
+  }
 
-if(!state.date || !state.rite) return;
+  const effectiveDate = state.date || getNextSunday();
 
-state.liturgicalInfo =
-window.calculerTempsLiturgique(state.date,state.rite);
+  if (!window.calculerTempsLiturgique) {
+    state.liturgicalInfo = null;
+    return;
+  }
 
+  try {
+    state.liturgicalInfo = window.calculerTempsLiturgique(effectiveDate, state.rite);
+  } catch (error) {
+    console.error("Erreur de calcul liturgique :", error);
+    state.liturgicalInfo = null;
+  }
 }
-
-
 
 /* ===============================
-NAVIGATION
+NAVIGATION ECRANS
 ================================ */
 
-function prevSection(){
+function showScreen(screenNumber) {
+  const screen1 = document.getElementById("screen1");
+  const screen2 = document.getElementById("screen2");
 
-if(state.currentSectionIndex>0){
-state.currentSectionIndex--;
-render();
+  screen1.classList.toggle("active", screenNumber === 1);
+  screen2.classList.toggle("active", screenNumber === 2);
 }
 
+/* ===============================
+NAVIGATION SECTIONS
+================================ */
+
+function prevSection() {
+  if (!state.rite) return;
+
+  if (state.currentSectionIndex > 0) {
+    state.currentSectionIndex--;
+    saveLocalState();
+    render();
+  }
 }
 
-function nextSection(){
+function nextSection() {
+  if (!state.rite) return;
 
-state.currentSectionIndex++;
+  const maxIndex = SECTIONS[state.rite].length - 1;
 
-render();
-
+  if (state.currentSectionIndex < maxIndex) {
+    state.currentSectionIndex++;
+    saveLocalState();
+    render();
+  }
 }
-
-
 
 /* ===============================
 RENDER GLOBAL
 ================================ */
 
-function render(){
-
-renderSectionTitle();
-
-renderSuggestions();
-
-renderSheet();
-
+function render() {
+  renderSectionTitle();
+  renderSuggestions();
+  renderSheet();
+  renderSummary();
+  renderSectionsList();
 }
-
-
 
 /* ===============================
 TITRE SECTION
 ================================ */
 
-function renderSectionTitle(){
+function renderSectionTitle() {
+  const titleEl = document.getElementById("sectionTitle");
+  const subtitleEl = document.getElementById("sectionSubtitle");
 
-const section =
-SECTIONS[state.rite]?.[state.currentSectionIndex];
+  if (!titleEl || !subtitleEl) return;
 
-document.getElementById("sectionTitle")
-.textContent = section || "";
+  const section = SECTIONS[state.rite]?.[state.currentSectionIndex];
 
-document.getElementById("sectionSubtitle")
-.textContent =
-state.liturgicalInfo?.display?.title || "";
-
+  titleEl.textContent = section || "";
+  subtitleEl.textContent = state.liturgicalInfo?.display?.title || "";
 }
-
-
 
 /* ===============================
 SUGGESTIONS
 ================================ */
 
-function renderSuggestions(){
+function renderSuggestions() {
+  const container = document.getElementById("chants");
+  if (!container) return;
 
-const container = document.getElementById("chants");
+  container.innerHTML = "";
 
-container.innerHTML="";
+  if (!state.rite) return;
 
-const section =
-SECTIONS[state.rite][state.currentSectionIndex];
+  const section = SECTIONS[state.rite]?.[state.currentSectionIndex];
+  if (!section) return;
 
-const suggestions =
-getRankedSuggestions(section).slice(0,3);
+  const suggestions = getRankedSuggestions(section).slice(0, 3);
 
-suggestions.forEach(chant=>{
-
-const card = createChantCard(chant);
-
-container.appendChild(card);
-
-});
-
+  suggestions.forEach((chant) => {
+    const card = createChantCard(chant);
+    container.appendChild(card);
+  });
 }
-
-
 
 /* ===============================
 ALGORITHME SUGGESTION
 ================================ */
 
-function getRankedSuggestions(section){
+function getRankedSuggestions(section) {
+  const season = state.liturgicalInfo?.season?.id;
 
-const season = state.liturgicalInfo?.season?.id;
+  const results = state.chants.map((chant) => {
+    let score = 0;
 
-const results = state.chants.map(chant=>{
+    if (matchesFunction(chant, section)) score += 100;
+    if (matchesSeason(chant, season)) score += 60;
+    if (matchesRite(chant, state.rite)) score += 20;
+    if (state.likes[chant.id]) score += 80;
 
-let score = 0;
+    const quality = Number(chant?.qualite_annotation || chant?.qualite || 0);
+    score += quality;
 
-if(matchesFunction(chant,section))
-score += 100;
+    return { chant, score };
+  });
 
-if(matchesSeason(chant,season))
-score += 60;
+  results.sort((a, b) => b.score - a.score);
 
-if(matchesRite(chant,state.rite))
-score += 20;
+  const liked = results.filter((x) => state.likes[x.chant.id]);
 
-if(state.likes[chant.id])
-score += 80;
+  if (liked.length) {
+    const topLiked = liked[0];
+    results.splice(results.indexOf(topLiked), 1);
+    results.unshift(topLiked);
+  }
 
-return {chant,score};
-
-});
-
-results.sort((a,b)=>b.score-a.score);
-
-const liked =
-results.filter(x=>state.likes[x.chant.id]);
-
-if(liked.length){
-const topLiked = liked[0];
-results.splice(results.indexOf(topLiked),1);
-results.unshift(topLiked);
+  return results.map((x) => x.chant);
 }
-
-return results.map(x=>x.chant);
-
-}
-
-
 
 /* ===============================
 MATCHERS
 ================================ */
 
-function matchesFunction(chant,section){
-
-return chant?.liturgie?.fonctions
-?.some(f=>normalize(f).includes(normalize(section)));
-
+function matchesFunction(chant, section) {
+  return chant?.liturgie?.fonctions?.some((f) =>
+    normalize(f).includes(normalize(section))
+  );
 }
 
-function matchesSeason(chant,season){
+function matchesSeason(chant, season) {
+  if (!season) return true;
 
-if(!season) return true;
-
-return chant?.liturgie?.temps_liturgiques
-?.some(t=>normalize(t).includes(normalize(season)));
-
+  return chant?.liturgie?.temps_liturgiques?.some((t) =>
+    normalize(t).includes(normalize(season))
+  );
 }
 
-function matchesRite(chant,rite){
+function matchesRite(chant, rite) {
+  if (!rite) return true;
 
-return chant?.liturgie?.rites
-?.some(r=>normalize(r).includes(normalize(rite)));
-
+  return chant?.liturgie?.rites?.some((r) =>
+    normalize(r).includes(normalize(rite))
+  );
 }
 
-function normalize(s){
-
-return (s||"")
-.toLowerCase()
-.normalize("NFD")
-.replace(/[\u0300-\u036f]/g,"");
-
+function normalize(value) {
+  return (value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
 }
-
-
 
 /* ===============================
 CARTE CHANT
 ================================ */
 
-function createChantCard(chant){
+function createChantCard(chant) {
+  const div = document.createElement("div");
+  div.className = "chant";
 
-const div = document.createElement("div");
+  const title = document.createElement("div");
+  title.className = "chant-title";
+  title.textContent = chant.titre || "Sans titre";
 
-div.className="chant";
+  const actions = document.createElement("div");
+  actions.className = "chant-actions";
 
-const title = document.createElement("div");
-title.textContent = chant.titre;
+  const like = document.createElement("button");
+  like.type = "button";
+  like.textContent = state.likes[chant.id] ? "♥" : "♡";
+  like.title = "Ajouter aux favoris";
 
-const like = document.createElement("button");
-like.textContent = state.likes[chant.id]?"♥":"♡";
+  like.onclick = () => {
+    state.likes[chant.id] = !state.likes[chant.id];
+    saveLocalState();
+    render();
+  };
 
-like.onclick = ()=>{
-state.likes[chant.id]=!state.likes[chant.id];
-render();
-};
+  const select = document.createElement("button");
+  select.type = "button";
+  select.textContent = "Sélectionner";
+  select.onclick = () => selectChant(chant);
 
-const select = document.createElement("button");
-select.textContent="Sélectionner";
+  actions.appendChild(like);
+  actions.appendChild(select);
 
-select.onclick=()=>selectChant(chant);
+  div.appendChild(title);
+  div.appendChild(actions);
 
-div.appendChild(title);
-div.appendChild(like);
-div.appendChild(select);
-
-return div;
-
+  return div;
 }
-
-
 
 /* ===============================
 SELECTION CHANT
 ================================ */
 
-function selectChant(chant){
+function selectChant(chant) {
+  const section = SECTIONS[state.rite]?.[state.currentSectionIndex];
+  if (!section) return;
 
-const section =
-SECTIONS[state.rite][state.currentSectionIndex];
+  if (!state.selectedBySection[section]) {
+    state.selectedBySection[section] = [];
+  }
 
-if(!state.selectedBySection[section])
-state.selectedBySection[section]=[];
+  if (!state.selectedBySection[section].includes(chant.id)) {
+    state.selectedBySection[section].push(chant.id);
+  }
 
-state.selectedBySection[section].push(chant.id);
-
-nextSection();
-
+  saveLocalState();
+  nextSection();
 }
-
-
 
 /* ===============================
 FEUILLE A4
 ================================ */
 
-function renderSheet(){
+function renderSheet() {
+  const title = state.liturgicalInfo?.display?.title || "";
+  const subtitle = state.liturgicalInfo?.display?.subtitle || "";
 
-const title =
-state.liturgicalInfo?.display?.title || "";
+  document.getElementById("sheetTitle").textContent = title;
+  document.getElementById("sheetSubtitle").textContent = subtitle;
 
-const subtitle =
-state.liturgicalInfo?.display?.subtitle || "";
+  const container = document.getElementById("sheetContent");
+  if (!container) return;
 
-document.getElementById("sheetTitle").textContent = title;
+  container.innerHTML = "";
 
-document.getElementById("sheetSubtitle").textContent = subtitle;
+  Object.entries(state.selectedBySection).forEach(([section, chants]) => {
+    const block = document.createElement("div");
+    block.className = "sheet-section";
 
-const container = document.getElementById("sheetContent");
+    const h = document.createElement("h3");
+    h.textContent = section;
+    block.appendChild(h);
 
-container.innerHTML="";
+    chants.forEach((id) => {
+      const chant = state.chantsById.get(id);
+      if (!chant) return;
 
-Object.entries(state.selectedBySection)
-.forEach(([section,chants])=>{
+      const line = document.createElement("div");
+      line.textContent = chant.titre || "Sans titre";
+      block.appendChild(line);
+    });
 
-const block = document.createElement("div");
-
-const h = document.createElement("h3");
-h.textContent = section;
-
-block.appendChild(h);
-
-chants.forEach(id=>{
-
-const chant = state.chantsById.get(id);
-
-const line = document.createElement("div");
-
-line.textContent = chant.titre;
-
-block.appendChild(line);
-
-});
-
-container.appendChild(block);
-
-});
-
+    container.appendChild(block);
+  });
 }
 
+/* ===============================
+RESUME COLONNE 1
+================================ */
 
+function renderSummary() {
+  const container = document.getElementById("summary");
+  if (!container) return;
+
+  const riteLabel =
+    state.rite === "ordinaire"
+      ? "Rite ordinaire"
+      : state.rite === "extraordinaire"
+      ? "Rite extraordinaire"
+      : "Non choisi";
+
+  container.innerHTML = `
+    <div class="summary-title">Résumé</div>
+    <div class="summary-line"><strong>Rite :</strong> ${riteLabel}</div>
+    <div class="summary-line"><strong>Date :</strong> ${formatDateFr(state.date)}</div>
+  `;
+}
+
+function renderSectionsList() {
+  const container = document.getElementById("sections");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  const sections = SECTIONS[state.rite] || [];
+
+  sections.forEach((section, index) => {
+    const item = document.createElement("div");
+    item.className = "section-pill" + (index === state.currentSectionIndex ? " active" : "");
+    item.textContent = section;
+    container.appendChild(item);
+  });
+}
+
+function formatDateFr(isoDate) {
+  if (!isoDate) return "Non renseignée";
+
+  const [y, m, d] = isoDate.split("-");
+  if (!y || !m || !d) return isoDate;
+
+  return `${d}/${m}/${y}`;
+}
 
 /* ===============================
 LOCAL STORAGE
 ================================ */
 
-function restoreLocalState(){
+function restoreLocalState() {
+  const raw = localStorage.getItem("fdm_state");
+  if (!raw) return;
 
-const raw = localStorage.getItem("fdm_state");
+  try {
+    const saved = JSON.parse(raw);
 
-if(!raw) return;
-
-try{
-
-const saved = JSON.parse(raw);
-
-state.likes = saved.likes || {};
-
-}catch{}
-
+    state.likes = saved.likes || {};
+    state.date = saved.date || "";
+    state.rite = saved.rite || "";
+    state.currentSectionIndex = Number.isInteger(saved.currentSectionIndex)
+      ? saved.currentSectionIndex
+      : 0;
+    state.selectedBySection = saved.selectedBySection || {};
+  } catch (error) {
+    console.warn("Échec de restauration du localStorage :", error);
+  }
 }
 
-function saveLocalState(){
-
-localStorage.setItem("fdm_state",JSON.stringify({
-
-likes:state.likes
-
-}));
-
+function saveLocalState() {
+  localStorage.setItem(
+    "fdm_state",
+    JSON.stringify({
+      likes: state.likes,
+      date: state.date,
+      rite: state.rite,
+      currentSectionIndex: state.currentSectionIndex,
+      selectedBySection: state.selectedBySection
+    })
+  );
 }
