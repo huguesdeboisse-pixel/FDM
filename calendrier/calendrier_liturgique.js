@@ -11,7 +11,6 @@ import { resolveExtraordinairePrecedence } from "./precedence_extraordinaire.js"
 window.calculerTempsLiturgique = function(dateISO, rite){
 
   const date = new Date(dateISO + "T12:00:00");
-
   const year = date.getFullYear();
 
   const easter = computeEaster(year);
@@ -21,12 +20,12 @@ window.calculerTempsLiturgique = function(dateISO, rite){
 
   if(rite === "ordinaire"){
 
-    temporal = getTemporalOrdinaire(date, easter);
+    temporal = getTemporalOrdinaire(date,easter);
     sanctoral = getSanctoralOrdinaire(date);
 
   }else{
 
-    temporal = getTemporalExtraordinaire(date, easter);
+    temporal = getTemporalExtraordinaire(date,easter);
     sanctoral = getSanctoralExtraordinaire(date);
 
   }
@@ -41,25 +40,25 @@ window.calculerTempsLiturgique = function(dateISO, rite){
     candidates.push(sanctoral);
   }
 
-  let result;
+  let resolution;
 
   if(rite === "ordinaire"){
 
-    result = resolveOrdinairePrecedence(candidates, dateISO);
+    resolution = resolveOrdinairePrecedence(candidates);
 
   }else{
 
-    result = resolveExtraordinairePrecedence(candidates, dateISO);
+    resolution = resolveExtraordinairePrecedence(candidates);
 
   }
 
-  const celebration = result.winner || {};
+  const celebration = resolution.winner || {};
 
-  const displayTitle = celebration.label || temporal?.label || "";
-
-  const subtitleParts = [];
+  const title = celebration.label || temporal?.label || "";
 
   const dateLabel = formatDateFr(date);
+
+  const subtitleParts = [];
 
   subtitleParts.push(dateLabel);
 
@@ -68,7 +67,7 @@ window.calculerTempsLiturgique = function(dateISO, rite){
   }
 
   if(celebration.color?.label){
-    subtitleParts.push("ornements " + celebration.color.label.toLowerCase());
+    subtitleParts.push("ornements " + celebration.color.label);
   }
 
   const subtitle = subtitleParts.join(" — ");
@@ -81,7 +80,7 @@ window.calculerTempsLiturgique = function(dateISO, rite){
 
     season: temporal?.season || {},
 
-    celebration: {
+    celebration:{
       id: celebration.id || "",
       label: celebration.label || ""
     },
@@ -94,16 +93,16 @@ window.calculerTempsLiturgique = function(dateISO, rite){
 
     sanctoral: sanctoral || {},
 
-    display: {
-      title: displayTitle,
-      subtitle: subtitle,
-      date: dateLabel
+    display:{
+      title:title,
+      subtitle:subtitle,
+      date:dateLabel
     },
 
-    metadata: {
+    metadata:{
       source: celebration.source || "",
       priority: celebration.priority || null,
-      omittedCelebrations: result.omittedCelebrations || []
+      omittedCelebrations: resolution.omittedCelebrations || []
     }
 
   };
