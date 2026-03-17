@@ -308,6 +308,7 @@ function renderSectionTitle() {
   if (!titleEl || !subtitleEl) return;
 
   const section = SECTIONS[state.rite]?.[state.currentSectionIndex];
+if (!section) return;
 
   titleEl.textContent = section || "";
   subtitleEl.textContent = state.liturgicalInfo?.display?.title || "";
