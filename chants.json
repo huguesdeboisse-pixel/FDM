@@ -1,0 +1,675 @@
+[
+  {
+    "titre": "Je veux chanter ton amour Seigneur",
+    "titre_normalise": "Je veux chanter ton amour, Seigneur",
+    "texte_source": {
+      "brut": " Chants d’entrée \r\n1. JE VEUX CHANTER TON AMOUR SEIGNEUR\r\nhttps://www.youtube.com/watch?v=L9gmrWXjHeE\r\nRefrain :\r\nJe veux chanter ton amour, Seigneur, Chaque instant de ma vie.\r\nDanser pour toi en chantant ma joie et glorifier ton Nom.\r\n1. Ton amour pour nous Est plus fort que tout\r\nEt tu veux nous donner la vie,\r\nNous embraser par ton Esprit. Gloire à toi !\r\n2. Oui, tu es mon Dieu,\r\nTu es mon Seigneur.\r\nToi seul es mon libérateur,\r\nLe rocher sur qui je m ́appuie. Gloire à toi !\r\n3. Voici que tu viens\r\nAu milieu de nous,\r\nDemeurer au cœur de nos vies\r\nPour nous mener droit vers le Père. Gloire à toi !"
+    },
+    "texte_normalise": {
+      "refrain": [
+        "Je veux chanter ton amour, Seigneur, chaque instant de ma vie.",
+        "Danser pour toi en chantant ma joie et glorifier ton Nom."
+      ],
+      "couplets": [
+        "Ton amour pour nous est plus fort que tout, et tu veux nous donner la vie, nous embraser par ton Esprit. Gloire à toi!",
+        "Oui, tu es mon Dieu, tu es mon Seigneur. Toi seul es mon libérateur, le rocher sur qui je m'appuie. Gloire à toi!",
+        "Voici que tu viens au milieu de nous, demeurer au cœur de nos vies pour nous mener droit vers le Père. Gloire à toi!"
+      ],
+      "texte_complet": "Refrain\nJe veux chanter ton amour, Seigneur, chaque instant de ma vie.\nDanser pour toi en chantant ma joie et glorifier ton Nom.\n\nCouplet 1\nTon amour pour nous est plus fort que tout, et tu veux nous donner la vie, nous embraser par ton Esprit. Gloire à toi!\n\nCouplet 2\nOui, tu es mon Dieu, tu es mon Seigneur. Toi seul es mon libérateur, le rocher sur qui je m'appuie. Gloire à toi!\n\nCouplet 3\nVoici que tu viens au milieu de nous, demeurer au cœur de nos vies pour nous mener droit vers le Père. Gloire à toi!"
+    },
+    "structure": {
+      "a_refrain": true,
+      "a_couplets": true,
+      "nombre_couplets": 3
+    },
+    "auteurs": {
+      "paroles": null,
+      "musique": null
+    },
+    "qualite": {
+      "score_confiance": 96,
+      "statut": "valide_auto",
+      "motifs_rejet_auto": []
+    },
+    "source": {
+      "pdf_nom": "yvetot-carnet-de-chants-mariage.pdf",
+      "pages": [
+        5
+      ]
+    },
+    "meta_traitement": {
+      "titre_candidat_initial": "Je veux chanter ton amour Seigneur",
+      "score_confiance_extraction_initial": 98,
+      "presence_refrain_initiale": true,
+      "presence_couplets_initiale": true
+    },
+    "liturgie": {
+      "fonctions": [],
+      "temps_liturgiques": [
+        "T_TOUS_TEMPS"
+      ],
+      "themes": [
+        "A_LOUANGE",
+        "A_ESPRIT_SAINT",
+        "A_JOIE",
+        "A_CONFIANCE",
+        "A_UNITE"
+      ],
+      "fetes_specifiques": [],
+      "rites": []
+    },
+    "qualite_annotation": {
+      "score_annotation": 98,
+      "statut_annotation": "annote_auto",
+      "motifs_rejet_auto": []
+    },
+    "meta_annotation": {
+      "reponse_modele_brute": "{\n  \"liturgie\": {\n    \"fonctions\": [],\n    \"temps_liturgiques\": [\"T_TOUS_TEMPS\"],\n    \"themes\": [\"A_LOUANGE\", \"A_ESPRIT_SAINT\", \"A_JOIE\", \"A_CONFIANCE\", \"A_UNITE\"],\n    \"fetes_specifiques\": [],\n    \"rites\": []\n  },\n  \"commentaire\": \"Chant général de louange à l'amour de Dieu, mention explicite de l'Esprit Saint et de la joie, utilisable en tout temps.\"\n}",
+      "commentaire_modele": "Chant général de louange à l'amour de Dieu, mention explicite de l'Esprit Saint et de la joie, utilisable en tout temps."
+    },
+    "meta_dedoublonnage": {
+      "dedoublonne": false,
+      "nb_versions_detectees": 1,
+      "versions_supprimees": []
+    },
+    "id": "je_veux_chanter_ton_amour_seigneur"
+  },
+  {
+    "titre": "Jésus est le chemin",
+    "titre_normalise": "Jésus est le chemin",
+    "texte_source": {
+      "brut": "2. JÉSUS EST LE CHEMIN\nhttps://www.youtube.com/watch?v=ywpggirPTr0\nRefrain :\nJésus est le chemin Qui nous mène droit vers le Père,\nC'est lui qui est la vérité, Il est la vie !\n1- Jamais homme n'a parlé ainsi que celui là,\nNon personne ne peut faire les signes qu'il accomplit, Dieu est avec lui \n2- Jean-Baptiste nous a dit : \" Voici l' Agneau de Dieu\",\nCar c'est lui que le Père a marqué de son Sceau,Venez et voyez."
+    },
+    "texte_normalise": {
+      "refrain": [
+        "Jésus est le chemin qui nous mène droit vers le Père,",
+        "C'est lui qui est la vérité, il est la vie!"
+      ],
+      "couplets": [
+        "Jamais homme n'a parlé ainsi que celui-là,\nNon, personne ne peut faire les signes qu'il accomplit, Dieu est avec lui.",
+        "Jean-Baptiste nous a dit: « Voici l'Agneau de Dieu »,\nCar c'est lui que le Père a marqué de son sceau, venez et voyez."
+      ],
+      "texte_complet": "Refrain:\nJésus est le chemin qui nous mène droit vers le Père,\nC'est lui qui est la vérité, il est la vie!\n\nCouplet 1:\nJamais homme n'a parlé ainsi que celui-là,\nNon, personne ne peut faire les signes qu'il accomplit, Dieu est avec lui.\n\nCouplet 2:\nJean-Baptiste nous a dit: « Voici l'Agneau de Dieu »,\nCar c'est lui que le Père a marqué de son sceau, venez et voyez."
+    },
+    "structure": {
+      "a_refrain": true,
+      "a_couplets": true,
+      "nombre_couplets": 2
+    },
+    "auteurs": {
+      "paroles": null,
+      "musique": null
+    },
+    "qualite": {
+      "score_confiance": 94,
+      "statut": "valide_auto",
+      "motifs_rejet_auto": []
+    },
+    "source": {
+      "pdf_nom": "yvetot-carnet-de-chants-mariage.pdf",
+      "pages": [
+        5
+      ]
+    },
+    "meta_traitement": {
+      "titre_candidat_initial": "Jésus est le chemin",
+      "score_confiance_extraction_initial": 97,
+      "presence_refrain_initiale": true,
+      "presence_couplets_initiale": true
+    },
+    "liturgie": {
+      "fonctions": [],
+      "temps_liturgiques": [
+        "T_TOUS_TEMPS"
+      ],
+      "themes": [
+        "A_PAROLE",
+        "A_EGLISE",
+        "A_CONFIANCE"
+      ],
+      "fetes_specifiques": [],
+      "rites": []
+    },
+    "qualite_annotation": {
+      "score_annotation": 74,
+      "statut_annotation": "annote_auto",
+      "motifs_rejet_auto": []
+    },
+    "meta_annotation": {
+      "reponse_modele_brute": "{\n  \"liturgie\": {\n    \"fonctions\": [],\n    \"temps_liturgiques\": [\"T_TOUS_TEMPS\"],\n    \"themes\": [\"A_PAROLE\", \"A_EGLISE\", \"A_CONFIANCE\"],\n    \"fetes_specifiques\": [],\n    \"rites\": []\n  },\n  \"commentaire\": \"Le chant souligne Jésus comme chemin, vérité et vie, référence à Jean-Baptiste et à l'Agneau de Dieu, thèmes de parole, confiance et Église, applicable en tout temps.\"\n}",
+      "commentaire_modele": "Le chant souligne Jésus comme chemin, vérité et vie, référence à Jean-Baptiste et à l'Agneau de Dieu, thèmes de parole, confiance et Église, applicable en tout temps."
+    },
+    "meta_dedoublonnage": {
+      "dedoublonne": false,
+      "nb_versions_detectees": 1,
+      "versions_supprimees": []
+    },
+    "id": "jesus_est_le_chemin"
+  },
+  {
+    "titre": "Que tes œuvres sont belles",
+    "titre_normalise": "Que tes œuvres sont belles",
+    "texte_source": {
+      "brut": "3. QUE TES ŒUVRES SONT BELLES\nhttps://www.youtube.com/watch?v=GXXIg4aElP4\nRefrain :\nQue tes œuvres sont belles, Que tes œuvres sont grandes\nSeigneur, Seigneur, tu nous combles de joie. \nQue tes œuvres sont belles, Que tes œuvres sont grandes !\nSeigneur, Seigneur, tu nous combles de joie.\n1. C'est toi, le Dieu qui nous as faits, Qui nous as pétris de la terre! \nTout homme est une histoire sacrée, L'homme est à l'image de Dieu ! \nTon amour nous a façonnés Tirés du ventre de la terre! \nTu as mis en nous ton Esprit: Nous tenons debout sur la terre!"
+    },
+    "texte_normalise": {
+      "refrain": [
+        "Que tes œuvres sont belles, que tes œuvres sont grandes,",
+        "Seigneur, Seigneur, tu nous combles de joie.",
+        "Que tes œuvres sont belles, que tes œuvres sont grandes!",
+        "Seigneur, Seigneur, tu nous combles de joie."
+      ],
+      "couplets": [
+        "C'est toi, le Dieu qui nous as faits, qui nous as pétris de la terre!\nTout homme est une histoire sacrée, l'homme est à l'image de Dieu!\nTon amour nous a façonnés, tirés du ventre de la terre!\nTu as mis en nous ton Esprit: nous tenons debout sur la terre!"
+      ],
+      "texte_complet": "Refrain:\nQue tes œuvres sont belles, que tes œuvres sont grandes,\nSeigneur, Seigneur, tu nous combles de joie.\nQue tes œuvres sont belles, que tes œuvres sont grandes!\nSeigneur, Seigneur, tu nous combles de joie.\n\nCouplet 1:\nC'est toi, le Dieu qui nous as faits, qui nous as pétris de la terre!\nTout homme est une histoire sacrée, l'homme est à l'image de Dieu!\nTon amour nous a façonnés, tirés du ventre de la terre!\nTu as mis en nous ton Esprit: nous tenons debout sur la terre!"
+    },
+    "structure": {
+      "a_refrain": true,
+      "a_couplets": true,
+      "nombre_couplets": 1
+    },
+    "auteurs": {
+      "paroles": null,
+      "musique": null
+    },
+    "qualite": {
+      "score_confiance": 92,
+      "statut": "valide_auto",
+      "motifs_rejet_auto": []
+    },
+    "source": {
+      "pdf_nom": "yvetot-carnet-de-chants-mariage.pdf",
+      "pages": [
+        5
+      ]
+    },
+    "meta_traitement": {
+      "titre_candidat_initial": "Que tes œuvres sont belles",
+      "score_confiance_extraction_initial": 95,
+      "presence_refrain_initiale": true,
+      "presence_couplets_initiale": true
+    },
+    "liturgie": {
+      "fonctions": [],
+      "temps_liturgiques": [
+        "T_TOUS_TEMPS"
+      ],
+      "themes": [
+        "A_CREATION",
+        "A_JOIE",
+        "A_ESPRIT_SAINT"
+      ],
+      "fetes_specifiques": [],
+      "rites": []
+    },
+    "qualite_annotation": {
+      "score_annotation": 74,
+      "statut_annotation": "annote_auto",
+      "motifs_rejet_auto": []
+    },
+    "meta_annotation": {
+      "reponse_modele_brute": "{\n  \"liturgie\": {\n    \"fonctions\": [],\n    \"temps_liturgiques\": [\"T_TOUS_TEMPS\"],\n    \"themes\": [\"A_CREATION\", \"A_JOIE\", \"A_ESPRIT_SAINT\"],\n    \"fetes_specifiques\": [],\n    \"rites\": []\n  },\n  \"commentaire\": \"Le chant célèbre la création, la joie et l'Esprit Saint, sans indication de fonction liturgique ou temps spécifique.\"\n}",
+      "commentaire_modele": "Le chant célèbre la création, la joie et l'Esprit Saint, sans indication de fonction liturgique ou temps spécifique."
+    },
+    "meta_dedoublonnage": {
+      "dedoublonne": false,
+      "nb_versions_detectees": 1,
+      "versions_supprimees": []
+    },
+    "id": "que_tes_oeuvres_sont_belles"
+  },
+  {
+    "titre": "Chantez, priez, célébrez le Seigneur",
+    "titre_normalise": "Chantez, priez, célébrez le Seigneur",
+    "texte_source": {
+      "brut": "6- CHANTEZ PRIEZ CELEBREZ\nhttps://www.youtube.com/watch?v=ZyUGFt1ggYM\nRefrain :\nChantez, priez, célébrez le Seigneur, Dieu nous accueille, peuple du monde.\nChantez, priez, célébrez son nom, Dieu nous accueille dans sa maison.\n1. Il a fait le ciel et la terre, ÉTERNEL EST SON AMOUR \nFaçonné l’homme à son image, ÉTERNEL EST SON AMOUR\n2. Crucifié, c’est sa vie qu’Il donne, ÉTERNEL EST SON AMOUR,\nMais le Père le ressuscite, ÉTERNEL EST SON AMOUR.\n3. Dans l’Esprit Saint, Il nous baptise, ÉTERNEL EST SON AMOUR,\nSon amour forge notre Église, ÉTERNEL EST SON AMOUR."
+    },
+    "texte_normalise": {
+      "refrain": [
+        "Chantez, priez, célébrez le Seigneur, Dieu nous accueille, peuple du monde.",
+        "Chantez, priez, célébrez son nom, Dieu nous accueille dans sa maison."
+      ],
+      "couplets": [
+        "Il a fait le ciel et la terre, éternel est son amour.\nFaçonné l'homme à son image, éternel est son amour.",
+        "Crucifié, c'est sa vie qu'Il donne, éternel est son amour.\nMais le Père le ressuscite, éternel est son amour.",
+        "Dans l'Esprit Saint, Il nous baptise, éternel est son amour.\nSon amour forge notre Église, éternel est son amour."
+      ],
+      "texte_complet": "Chantez, priez, célébrez le Seigneur, Dieu nous accueille, peuple du monde.\nChantez, priez, célébrez son nom, Dieu nous accueille dans sa maison.\n\nIl a fait le ciel et la terre, éternel est son amour.\nFaçonné l'homme à son image, éternel est son amour.\n\nCrucifié, c'est sa vie qu'Il donne, éternel est son amour.\nMais le Père le ressuscite, éternel est son amour.\n\nDans l'Esprit Saint, Il nous baptise, éternel est son amour.\nSon amour forge notre Église, éternel est son amour."
+    },
+    "structure": {
+      "a_refrain": true,
+      "a_couplets": true,
+      "nombre_couplets": 3
+    },
+    "auteurs": {
+      "paroles": null,
+      "musique": null
+    },
+    "qualite": {
+      "score_confiance": 96,
+      "statut": "valide_auto",
+      "motifs_rejet_auto": []
+    },
+    "source": {
+      "pdf_nom": "yvetot-carnet-de-chants-mariage.pdf",
+      "pages": [
+        6
+      ]
+    },
+    "meta_traitement": {
+      "titre_candidat_initial": "Chantez, priez, célébrez le Seigneur",
+      "score_confiance_extraction_initial": 97,
+      "presence_refrain_initiale": true,
+      "presence_couplets_initiale": true
+    },
+    "liturgie": {
+      "fonctions": [],
+      "temps_liturgiques": [
+        "T_TOUS_TEMPS"
+      ],
+      "themes": [
+        "A_CREATION",
+        "A_RESURRECTION",
+        "A_BAPTEME",
+        "A_EGLISE",
+        "A_LOUANGE"
+      ],
+      "fetes_specifiques": [],
+      "rites": []
+    },
+    "qualite_annotation": {
+      "score_annotation": 98,
+      "statut_annotation": "annote_auto",
+      "motifs_rejet_auto": [
+        "themes_elagues"
+      ]
+    },
+    "meta_annotation": {
+      "reponse_modele_brute": "{\n  \"liturgie\": {\n    \"fonctions\": [],\n    \"temps_liturgiques\": [\"T_TOUS_TEMPS\"],\n    \"themes\": [\"A_CREATION\", \"A_RESURRECTION\", \"A_BAPTEME\", \"A_EGLISE\", \"A_LOUANGE\", \"A_ESPRIT_SAINT\", \"A_JOIE\", \"A_ACTION_DE_GRACE\"],\n    \"fetes_specifiques\": [],\n    \"rites\": []\n  },\n  \"commentaire\": \"Chant général de louange évoquant la création, la résurrection, le baptême, l'Église et l'Esprit Saint, utilisable en tout temps.\"\n}",
+      "commentaire_modele": "Chant général de louange évoquant la création, la résurrection, le baptême, l'Église et l'Esprit Saint, utilisable en tout temps."
+    },
+    "meta_dedoublonnage": {
+      "dedoublonne": false,
+      "nb_versions_detectees": 1,
+      "versions_supprimees": []
+    },
+    "id": "chantez_priez_celebrez_le_seigneur"
+  },
+  {
+    "titre": "Que vive mon âme à te louer",
+    "titre_normalise": "Que vive mon âme à te louer",
+    "texte_source": {
+      "brut": "4- QUE VIVE MON ÂME A TE LOUER\nhttps://www.youtube.com/watch?v=VFQDBnZXifc\nRefrain :\nQue vive mon âme à Te louer! Tu as posé une lampe, une lumière sur ma route,\nTa parole, Seigneur, Ta parole, Seigneur.\n1 - Heureux ceux qui marchent dans tes voies, Seigneur!\nDe tout mon cœur, je veux garder ta parole, ne me délaisse pas, Dieu de ma joie!\n2 - Heureux ceux qui veulent faire ta volonté,\nje cours sans peur sur la voie de tes préceptes et mes lèvres publient ta vérité."
+    },
+    "texte_normalise": {
+      "refrain": [
+        "Que vive mon âme à te louer! Tu as posé une lampe, une lumière sur ma route,",
+        "Ta parole, Seigneur, ta parole, Seigneur."
+      ],
+      "couplets": [
+        "Heureux ceux qui marchent dans tes voies, Seigneur! De tout mon cœur, je veux garder ta parole, ne me délaisse pas, Dieu de ma joie!",
+        "Heureux ceux qui veulent faire ta volonté, je cours sans peur sur la voie de tes préceptes et mes lèvres publient ta vérité."
+      ],
+      "texte_complet": "Refrain:\nQue vive mon âme à te louer! Tu as posé une lampe, une lumière sur ma route,\nTa parole, Seigneur, ta parole, Seigneur.\n\nCouplet 1:\nHeureux ceux qui marchent dans tes voies, Seigneur! De tout mon cœur, je veux garder ta parole, ne me délaisse pas, Dieu de ma joie!\n\nCouplet 2:\nHeureux ceux qui veulent faire ta volonté, je cours sans peur sur la voie de tes préceptes et mes lèvres publient ta vérité."
+    },
+    "structure": {
+      "a_refrain": true,
+      "a_couplets": true,
+      "nombre_couplets": 2
+    },
+    "auteurs": {
+      "paroles": null,
+      "musique": null
+    },
+    "qualite": {
+      "score_confiance": 96,
+      "statut": "valide_auto",
+      "motifs_rejet_auto": []
+    },
+    "source": {
+      "pdf_nom": "yvetot-carnet-de-chants-mariage.pdf",
+      "pages": [
+        6
+      ]
+    },
+    "meta_traitement": {
+      "titre_candidat_initial": "Que vive mon âme à te louer",
+      "score_confiance_extraction_initial": 98,
+      "presence_refrain_initiale": true,
+      "presence_couplets_initiale": true
+    },
+    "liturgie": {
+      "fonctions": [],
+      "temps_liturgiques": [
+        "T_TOUS_TEMPS"
+      ],
+      "themes": [
+        "A_PAROLE",
+        "A_JOIE",
+        "A_LOUANGE"
+      ],
+      "fetes_specifiques": [],
+      "rites": []
+    },
+    "qualite_annotation": {
+      "score_annotation": 74,
+      "statut_annotation": "annote_auto",
+      "motifs_rejet_auto": []
+    },
+    "meta_annotation": {
+      "reponse_modele_brute": "{\n  \"liturgie\": {\n    \"fonctions\": [],\n    \"temps_liturgiques\": [\"T_TOUS_TEMPS\"],\n    \"themes\": [\"A_PAROLE\", \"A_JOIE\", \"A_LOUANGE\"],\n    \"fetes_specifiques\": [],\n    \"rites\": []\n  },\n  \"commentaire\": \"Le chant exprime la louange et la joie liées à la parole de Dieu, utilisable en tout temps.\"\n}",
+      "commentaire_modele": "Le chant exprime la louange et la joie liées à la parole de Dieu, utilisable en tout temps."
+    },
+    "meta_dedoublonnage": {
+      "dedoublonne": false,
+      "nb_versions_detectees": 1,
+      "versions_supprimees": []
+    },
+    "id": "que_vive_mon_ame_a_te_louer"
+  },
+  {
+    "titre": "Tournez les yeux vers le Seigneur",
+    "titre_normalise": "Tournez les yeux vers le Seigneur",
+    "texte_source": {
+      "brut": "5- TOURNEZ LES YEUX VERS LE SEIGNEUR\nhttps://www.youtube.com/watch?v=LTfq4FJnzGU\nRefrain :\nTournez les yeux vers le Seigneur Et rayonnez de joie !\nChantez son nom de tout votre cœur, Il est votre sauveur, c'est Lui votre\nSeigneur.\n1. J'ai cherché le Seigneur, et il m'a écouté\nIl m'a guéri de mes peurs, et sans fin je le louerai.\n2. Dieu regarde ceux qu'il aime, il écoute leur voix.\nIl les console de leurs peines et il guide leurs pas."
+    },
+    "texte_normalise": {
+      "refrain": [
+        "Tournez les yeux vers le Seigneur et rayonnez de joie!",
+        "Chantez son nom de tout votre cœur, il est votre Sauveur, c'est lui votre Seigneur."
+      ],
+      "couplets": [
+        "J'ai cherché le Seigneur, et il m'a écouté.\nIl m'a guéri de mes peurs, et sans fin je le louerai.",
+        "Dieu regarde ceux qu'il aime, il écoute leur voix.\nIl les console de leurs peines et il guide leurs pas."
+      ],
+      "texte_complet": "Refrain:\nTournez les yeux vers le Seigneur et rayonnez de joie!\nChantez son nom de tout votre cœur, il est votre Sauveur, c'est lui votre Seigneur.\n\nCouplet 1:\nJ'ai cherché le Seigneur, et il m'a écouté.\nIl m'a guéri de mes peurs, et sans fin je le louerai.\n\nCouplet 2:\nDieu regarde ceux qu'il aime, il écoute leur voix.\nIl les console de leurs peines et il guide leurs pas."
+    },
+    "structure": {
+      "a_refrain": true,
+      "a_couplets": true,
+      "nombre_couplets": 2
+    },
+    "auteurs": {
+      "paroles": null,
+      "musique": null
+    },
+    "qualite": {
+      "score_confiance": 96,
+      "statut": "valide_auto",
+      "motifs_rejet_auto": []
+    },
+    "source": {
+      "pdf_nom": "yvetot-carnet-de-chants-mariage.pdf",
+      "pages": [
+        6
+      ]
+    },
+    "meta_traitement": {
+      "titre_candidat_initial": "Tournez les yeux vers le Seigneur",
+      "score_confiance_extraction_initial": 98,
+      "presence_refrain_initiale": true,
+      "presence_couplets_initiale": true
+    },
+    "liturgie": {
+      "fonctions": [],
+      "temps_liturgiques": [
+        "T_TOUS_TEMPS"
+      ],
+      "themes": [
+        "A_JOIE",
+        "A_CONFIANCE",
+        "A_LOUANGE"
+      ],
+      "fetes_specifiques": [],
+      "rites": []
+    },
+    "qualite_annotation": {
+      "score_annotation": 74,
+      "statut_annotation": "annote_auto",
+      "motifs_rejet_auto": []
+    },
+    "meta_annotation": {
+      "reponse_modele_brute": "{\n  \"liturgie\": {\n    \"fonctions\": [],\n    \"temps_liturgiques\": [\"T_TOUS_TEMPS\"],\n    \"themes\": [\"A_JOIE\", \"A_CONFIANCE\", \"A_LOUANGE\"],\n    \"fetes_specifiques\": [],\n    \"rites\": []\n  },\n  \"commentaire\": \"Chant général de louange et de confiance en Dieu, exprimant la joie et la consolation, utilisable en tout temps.\"\n}",
+      "commentaire_modele": "Chant général de louange et de confiance en Dieu, exprimant la joie et la consolation, utilisable en tout temps."
+    },
+    "meta_dedoublonnage": {
+      "dedoublonne": false,
+      "nb_versions_detectees": 1,
+      "versions_supprimees": []
+    },
+    "id": "tournez_les_yeux_vers_le_seigneur"
+  },
+  {
+    "titre": "Jubilez, criez de joie",
+    "titre_normalise": "Jubilez, criez de joie",
+    "texte_source": {
+      "brut": "8- JUBILEZ, CRIEZ DE JOIE\nhttps://www.youtube.com/watch?v=XvGpsEsVEPg\nRefrain :\nJubilez ! Criez de joie ! Acclamez le Dieu trois fois Saint !\nVenez le prier dans la paix ; témoigner de son amour.\nJubilez ! Criez de joie ! Pour Dieu notre Dieu.\n1. Louez le Dieu de lumière, il nous arrache aux ténèbres.\nDevenez en sa clarté, des enfants de sa lumière.\n2. Ouvrez vous, ouvrez vos cœurs, au Dieu de miséricorde.\nLaissez-vous réconcilier, laissez-vous transfigurer.\n3. Notre Dieu est tout amour, toute paix toute tendresse.\nDemeurez en son amour, il vous comblera de Lui.\n4. Louange au Père et au Fils, louange à l'Esprit de gloire.\nBienheureuse Trinité : Notre joie et notre vie !"
+    },
+    "texte_normalise": {
+      "refrain": [
+        "Jubilez! Criez de joie! Acclamez le Dieu trois fois Saint!",
+        "Venez le prier dans la paix, témoigner de son amour.",
+        "Jubilez! Criez de joie! Pour Dieu notre Dieu."
+      ],
+      "couplets": [
+        "Louez le Dieu de lumière, il nous arrache aux ténèbres.\nDevenez en sa clarté, des enfants de sa lumière.",
+        "Ouvrez-vous, ouvrez vos cœurs au Dieu de miséricorde.\nLaissez-vous réconcilier, laissez-vous transfigurer.",
+        "Notre Dieu est tout amour, toute paix, toute tendresse.\nDemeurez en son amour, il vous comblera de lui.",
+        "Louange au Père et au Fils, louange à l'Esprit de gloire.\nBienheureuse Trinité: notre joie et notre vie!"
+      ],
+      "texte_complet": "Refrain:\nJubilez! Criez de joie! Acclamez le Dieu trois fois Saint!\nVenez le prier dans la paix, témoigner de son amour.\nJubilez! Criez de joie! Pour Dieu notre Dieu.\n\n1. Louez le Dieu de lumière, il nous arrache aux ténèbres.\nDevenez en sa clarté, des enfants de sa lumière.\n\n2. Ouvrez-vous, ouvrez vos cœurs au Dieu de miséricorde.\nLaissez-vous réconcilier, laissez-vous transfigurer.\n\n3. Notre Dieu est tout amour, toute paix, toute tendresse.\nDemeurez en son amour, il vous comblera de lui.\n\n4. Louange au Père et au Fils, louange à l'Esprit de gloire.\nBienheureuse Trinité: notre joie et notre vie!"
+    },
+    "structure": {
+      "a_refrain": true,
+      "a_couplets": true,
+      "nombre_couplets": 4
+    },
+    "auteurs": {
+      "paroles": null,
+      "musique": null
+    },
+    "qualite": {
+      "score_confiance": 97,
+      "statut": "valide_auto",
+      "motifs_rejet_auto": []
+    },
+    "source": {
+      "pdf_nom": "yvetot-carnet-de-chants-mariage.pdf",
+      "pages": [
+        7
+      ]
+    },
+    "meta_traitement": {
+      "titre_candidat_initial": "Jubilez, criez de joie",
+      "score_confiance_extraction_initial": 98,
+      "presence_refrain_initiale": true,
+      "presence_couplets_initiale": true
+    },
+    "liturgie": {
+      "fonctions": [],
+      "temps_liturgiques": [
+        "T_TOUS_TEMPS"
+      ],
+      "themes": [
+        "A_LOUANGE",
+        "A_PAIX",
+        "A_MISERICORDE",
+        "A_JOIE",
+        "A_CONFIANCE"
+      ],
+      "fetes_specifiques": [],
+      "rites": []
+    },
+    "qualite_annotation": {
+      "score_annotation": 98,
+      "statut_annotation": "annote_auto",
+      "motifs_rejet_auto": [
+        "themes_elagues"
+      ]
+    },
+    "meta_annotation": {
+      "reponse_modele_brute": "{\n  \"liturgie\": {\n    \"fonctions\": [],\n    \"temps_liturgiques\": [\"T_TOUS_TEMPS\"],\n    \"themes\": [\"A_LOUANGE\", \"A_PAIX\", \"A_MISERICORDE\", \"A_JOIE\", \"A_CONFIANCE\", \"A_UNITE\", \"A_ACTION_DE_GRACE\"],\n    \"fetes_specifiques\": [],\n    \"rites\": []\n  },\n  \"commentaire\": \"Chant général de louange à la Trinité, évoquant la joie, la paix, la miséricorde et l'unité, utilisable en tout temps.\"\n}",
+      "commentaire_modele": "Chant général de louange à la Trinité, évoquant la joie, la paix, la miséricorde et l'unité, utilisable en tout temps."
+    },
+    "meta_dedoublonnage": {
+      "dedoublonne": false,
+      "nb_versions_detectees": 1,
+      "versions_supprimees": []
+    },
+    "id": "jubilez_criez_de_joie"
+  },
+  {
+    "titre": "Pour un seul et même Dieu",
+    "titre_normalise": "Pour un seul et même Dieu",
+    "texte_source": {
+      "brut": "10- POUR UN SEUL ET MÊME DIEU\nhttps://www.youtube.com/watch?v=4urxk6skd_o\nRefrain :\nPour un seul et même Dieu, ils deviennent chemin et portent la lumière,\nPour un seul et même Dieu, ils deviennent chemin et partagent le pain.\n1. Ton peuple a pris naissance quand une étoile s'est levée,\nNaissance de Dieu au cœur de l'homme, naissance de l'homme au cœur de Dieu!\nTon peuple a pris naissance.\n2 - Ton peuple a pris la route, au désert ils t'ont cherché,\nLa route de Dieu au cœur de l'homme, la route de l'homme au cœur de Dieu,\nTon peuple a pris la route.\n3 - Ton peuple a pris souffrance, sur une croix comme un paria,\nSouffrance de Dieu au cœur de l'homme, souffrance de l'homme au cœur de Dieu,\nTon peuple a pris souffrance.\n4 - Ton peuple a pris lumière, sa nuit sera sans fin,\nLumière de Dieu au cœur de l'homme, lumière de l'homme au cœur de Dieu,\nTon peuple a pris lumière."
+    },
+    "texte_normalise": {
+      "refrain": [
+        "Pour un seul et même Dieu, ils deviennent chemin et portent la lumière,",
+        "Pour un seul et même Dieu, ils deviennent chemin et partagent le pain."
+      ],
+      "couplets": [
+        "Ton peuple a pris naissance quand une étoile s'est levée,\nNaissance de Dieu au cœur de l'homme, naissance de l'homme au cœur de Dieu!\nTon peuple a pris naissance.",
+        "Ton peuple a pris la route, au désert ils t'ont cherché,\nLa route de Dieu au cœur de l'homme, la route de l'homme au cœur de Dieu,\nTon peuple a pris la route.",
+        "Ton peuple a pris souffrance, sur une croix comme un paria,\nSouffrance de Dieu au cœur de l'homme, souffrance de l'homme au cœur de Dieu,\nTon peuple a pris souffrance.",
+        "Ton peuple a pris lumière, sa nuit sera sans fin,\nLumière de Dieu au cœur de l'homme, lumière de l'homme au cœur de Dieu,\nTon peuple a pris lumière."
+      ],
+      "texte_complet": "Refrain:\nPour un seul et même Dieu, ils deviennent chemin et portent la lumière,\nPour un seul et même Dieu, ils deviennent chemin et partagent le pain.\n\n1. Ton peuple a pris naissance quand une étoile s'est levée,\nNaissance de Dieu au cœur de l'homme, naissance de l'homme au cœur de Dieu!\nTon peuple a pris naissance.\n\n2. Ton peuple a pris la route, au désert ils t'ont cherché,\nLa route de Dieu au cœur de l'homme, la route de l'homme au cœur de Dieu,\nTon peuple a pris la route.\n\n3. Ton peuple a pris souffrance, sur une croix comme un paria,\nSouffrance de Dieu au cœur de l'homme, souffrance de l'homme au cœur de Dieu,\nTon peuple a pris souffrance.\n\n4. Ton peuple a pris lumière, sa nuit sera sans fin,\nLumière de Dieu au cœur de l'homme, lumière de l'homme au cœur de Dieu,\nTon peuple a pris lumière."
+    },
+    "structure": {
+      "a_refrain": true,
+      "a_couplets": true,
+      "nombre_couplets": 4
+    },
+    "auteurs": {
+      "paroles": null,
+      "musique": null
+    },
+    "qualite": {
+      "score_confiance": 96,
+      "statut": "valide_auto",
+      "motifs_rejet_auto": []
+    },
+    "source": {
+      "pdf_nom": "yvetot-carnet-de-chants-mariage.pdf",
+      "pages": [
+        8
+      ]
+    },
+    "meta_traitement": {
+      "titre_candidat_initial": "Pour un seul et même Dieu",
+      "score_confiance_extraction_initial": 97,
+      "presence_refrain_initiale": true,
+      "presence_couplets_initiale": true
+    },
+    "liturgie": {
+      "fonctions": [],
+      "temps_liturgiques": [
+        "T_TOUS_TEMPS"
+      ],
+      "themes": [
+        "A_UNITE",
+        "A_CREATION",
+        "A_CROIX"
+      ],
+      "fetes_specifiques": [],
+      "rites": []
+    },
+    "qualite_annotation": {
+      "score_annotation": 74,
+      "statut_annotation": "annote_auto",
+      "motifs_rejet_auto": [
+        "code_theme_invalide:A_LUMIERE"
+      ]
+    },
+    "meta_annotation": {
+      "reponse_modele_brute": "{\n  \"liturgie\": {\n    \"fonctions\": [],\n    \"temps_liturgiques\": [\"T_TOUS_TEMPS\"],\n    \"themes\": [\"A_UNITE\", \"A_CREATION\", \"A_CROIX\", \"A_LUMIERE\"],\n    \"fetes_specifiques\": [],\n    \"rites\": []\n  },\n  \"commentaire\": \"Le chant évoque l'unité en Dieu, la création, la croix et la lumière, sans fonction liturgique précise ni temps liturgique spécifique.\"\n}",
+      "commentaire_modele": "Le chant évoque l'unité en Dieu, la création, la croix et la lumière, sans fonction liturgique précise ni temps liturgique spécifique."
+    },
+    "meta_dedoublonnage": {
+      "dedoublonne": false,
+      "nb_versions_detectees": 1,
+      "versions_supprimees": []
+    },
+    "id": "pour_un_seul_et_meme_dieu"
+  },
+  {
+    "titre": "Qu'exulte tout l'univers",
+    "titre_normalise": "Qu'exulte tout l'univers",
+    "texte_source": {
+      "brut": "11- QU’EXULTE TOUT L’UNIVERS\nhttps://www.youtube.com/watch?v=XKFnqWFGScA\nRefrain :\nQu´exulte tout l´univers, que soit chantée en tous lieux \nLa puissance de Dieu. \nDans une même allégresse, terre et cieux dansent de joie, \nChantent alléluia !\n1. Par amour des pécheurs La lumière est venue , \nElle a changé les cœurs De tous ceux qui l´ont reconnue. \n2. Vous étiez dans la nuit, Maintenant jubilez\nDieu vous donne la vie , Par amour il s´est incarné.\n3. Exultez, rendez gloire, Chantez que Dieu est bon,\nChrist est notre victoire, Il est notre résurrection.\n4. Que chacun reconnaisse : Jésus est notre Roi.\nRejetons nos tristesses Pour une éternité de joie."
+    },
+    "texte_normalise": {
+      "refrain": [
+        "Qu'exulte tout l'univers, que soit chantée en tous lieux",
+        "la puissance de Dieu.",
+        "Dans une même allégresse, terre et cieux dansent de joie,",
+        "chantent alléluia!"
+      ],
+      "couplets": [
+        "Par amour des pécheurs, la lumière est venue,\nelle a changé les cœurs de tous ceux qui l'ont reconnue.",
+        "Vous étiez dans la nuit, maintenant jubilez,\nDieu vous donne la vie, par amour il s'est incarné.",
+        "Exultez, rendez gloire, chantez que Dieu est bon,\nChrist est notre victoire, il est notre résurrection.",
+        "Que chacun reconnaisse: Jésus est notre Roi.\nRejetons nos tristesses pour une éternité de joie."
+      ],
+      "texte_complet": "Qu'exulte tout l'univers, que soit chantée en tous lieux\nla puissance de Dieu.\nDans une même allégresse, terre et cieux dansent de joie,\nchantent alléluia!\n\nPar amour des pécheurs, la lumière est venue,\nelle a changé les cœurs de tous ceux qui l'ont reconnue.\n\nVous étiez dans la nuit, maintenant jubilez,\nDieu vous donne la vie, par amour il s'est incarné.\n\nExultez, rendez gloire, chantez que Dieu est bon,\nChrist est notre victoire, il est notre résurrection.\n\nQue chacun reconnaisse: Jésus est notre Roi.\nRejetons nos tristesses pour une éternité de joie."
+    },
+    "structure": {
+      "a_refrain": true,
+      "a_couplets": true,
+      "nombre_couplets": 4
+    },
+    "auteurs": {
+      "paroles": null,
+      "musique": null
+    },
+    "qualite": {
+      "score_confiance": 96,
+      "statut": "valide_auto",
+      "motifs_rejet_auto": []
+    },
+    "source": {
+      "pdf_nom": "yvetot-carnet-de-chants-mariage.pdf",
+      "pages": [
+        8
+      ]
+    },
+    "meta_traitement": {
+      "titre_candidat_initial": "Qu’exulte tout l’univers",
+      "score_confiance_extraction_initial": 97,
+      "presence_refrain_initiale": true,
+      "presence_couplets_initiale": true
+    },
+    "liturgie": {
+      "fonctions": [],
+      "temps_liturgiques": [
+        "T_TOUS_TEMPS"
+      ],
+      "themes": [
+        "A_LOUANGE",
+        "A_JOIE",
+        "A_RESURRECTION",
+        "A_CONFIANCE"
+      ],
+      "fetes_specifiques": [],
+      "rites": []
+    },
+    "qualite_annotation": {
+      "score_annotation": 86,
+      "statut_annotation": "annote_auto",
+      "motifs_rejet_auto": []
+    },
+    "meta_annotation": {
+      "reponse_modele_brute": "{\n  \"liturgie\": {\n    \"fonctions\": [],\n    \"temps_liturgiques\": [\"T_TOUS_TEMPS\"],\n    \"themes\": [\"A_LOUANGE\", \"A_JOIE\", \"A_RESURRECTION\", \"A_CONFIANCE\"],\n    \"fetes_specifiques\": [],\n    \"rites\": []\n  },\n  \"commentaire\": \"Chant général de louange et de joie, évoquant la résurrection et la victoire du Christ, utilisable en tout temps.\"\n}",
+      "commentaire_modele": "Chant général de louange et de joie, évoquant la résurrection et la victoire du Christ, utilisable en tout temps."
+    },
+    "meta_dedoublonnage": {
+      "dedoublonne": false,
+      "nb_versions_detectees": 1,
+      "versions_supprimees": []
+    },
+    "id": "qu_exulte_tout_l_univers"
+  }
+]
