@@ -1,880 +1,304 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Feuille de Messe</title>
-  <style>
-    :root {
-      --bg: #f3f0ea;
-      --panel: #f8f5ef;
-      --panel-strong: #fdfbf8;
-      --text: #1f1f1f;
-      --muted: #6f695f;
-      --line: #ddd6ca;
-      --line-strong: #cfc6b7;
-      --accent: #8f1d1d;
-      --accent-soft: #f3e6e6;
-      --selected: #efe7da;
-      --shadow-soft: 0 10px 24px rgba(0, 0, 0, 0.05);
-      --shadow-sheet: 0 10px 30px rgba(0, 0, 0, 0.12);
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    html, body {
-      margin: 0;
-      padding: 0;
-      background: var(--bg);
-      color: var(--text);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    }
-
-    body {
-      min-height: 100vh;
-    }
-
-    button,
-    input,
-    select,
-    textarea {
-      font: inherit;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    .site-shell {
-      min-height: 100vh;
-      padding: 24px;
-    }
-
-    .site-header {
-      max-width: 1400px;
-      margin: 0 auto 22px auto;
-      text-align: center;
-    }
-
-    .site-title {
-      margin: 0;
-      font-size: 1.6rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-    }
-
-    .site-subtitle {
-      margin: 8px 0 0 0;
-      font-size: 0.95rem;
-      color: var(--muted);
-      font-weight: 500;
-    }
-
-    .screen-1 {
-      max-width: 980px;
-      margin: 0 auto;
-      background: var(--panel-strong);
-      border: 1px solid var(--line);
-      border-radius: 22px;
-      box-shadow: var(--shadow-soft);
-      padding: 28px;
-    }
-
-    .screen-1-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 22px;
-    }
-
-    .panel-block {
-      background: #fffdfa;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 18px;
-    }
-
-    .block-title {
-      margin: 0 0 14px 0;
-      font-size: 1rem;
-      font-weight: 700;
-    }
-
-    .field-label {
-      display: block;
-      font-size: 0.96rem;
-      font-weight: 600;
-      margin-bottom: 8px;
-    }
-
-    .field-help {
-      margin: 0 0 12px 0;
-      color: var(--muted);
-      font-size: 0.88rem;
-      line-height: 1.45;
-    }
-
-    .date-input,
-    .search-input {
-      width: 100%;
-      border: 1px solid var(--line-strong);
-      border-radius: 14px;
-      background: white;
-      padding: 12px 14px;
-      min-height: 46px;
-      outline: none;
-    }
-
-    .date-input:focus,
-    .search-input:focus {
-      border-color: #b5aa98;
-    }
-
-    .rite-buttons {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .rite-button {
-      border: 1px solid var(--line-strong);
-      background: white;
-      border-radius: 16px;
-      padding: 12px 18px;
-      cursor: pointer;
-      transition: 0.15s ease;
-      font-weight: 600;
-    }
-
-    .rite-button.active,
-    .rite-button:hover {
-      background: var(--selected);
-      border-color: #b9af9f;
-    }
-
-    .liturgical-summary {
-      min-height: 22px;
-      margin-top: 10px;
-      color: var(--muted);
-      font-size: 0.92rem;
-    }
-
-    .selected-carnets {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 12px;
-      min-height: 26px;
-    }
-
-    .mini-chip {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: #f4eee4;
-      border: 1px solid var(--line);
-      border-radius: 999px;
-      padding: 6px 10px;
-      font-size: 0.88rem;
-    }
-
-    .mini-chip button {
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      padding: 0;
-      line-height: 1;
-      font-size: 1rem;
-    }
-
-    .small-note {
-      color: var(--muted);
-      font-size: 0.88rem;
-      line-height: 1.45;
-    }
-
-    .carnets-results {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 10px;
-      margin-top: 12px;
-    }
-
-    .carnet-item {
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      text-align: left;
-      border: 1px solid var(--line);
-      background: white;
-      border-radius: 14px;
-      padding: 12px 14px;
-      cursor: pointer;
-      color: var(--text);
-    }
-
-    .carnet-item.active {
-      background: var(--selected);
-      border-color: #b7ae9f;
-    }
-
-    .secondary-button {
-      border: 1px solid var(--line-strong);
-      background: white;
-      border-radius: 14px;
-      padding: 11px 14px;
-      cursor: pointer;
-      min-height: 44px;
-    }
-
-    .workspace {
-      display: none;
-      max-width: 1500px;
-      margin: 0 auto;
-    }
-
-    .workspace.active {
-      display: block;
-    }
-
-    .workspace-grid {
-      display: grid;
-      grid-template-columns: 270px minmax(360px, 1fr) minmax(620px, 820px);
-      gap: 22px;
-      align-items: start;
-    }
-
-    .workspace-panel {
-      background: var(--panel-strong);
-      border: 1px solid var(--line);
-      border-radius: 22px;
-      box-shadow: var(--shadow-soft);
-      min-height: 200px;
-    }
-
-    .left-panel {
-      padding: 18px;
-      position: sticky;
-      top: 20px;
-    }
-
-    .left-summary {
-      display: grid;
-      gap: 10px;
-      margin-bottom: 18px;
-    }
-
-    .left-summary-item {
-      font-size: 0.92rem;
-      color: var(--muted);
-      line-height: 1.45;
-    }
-
-    .sections-nav {
-      display: grid;
-      gap: 10px;
-    }
-
-    .nav-item {
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      border: 1px solid var(--line);
-      background: white;
-      border-radius: 14px;
-      padding: 12px 14px;
-      cursor: pointer;
-      text-align: left;
-    }
-
-    .nav-item.current {
-      background: var(--selected);
-      border-color: #b7ae9f;
-      font-weight: 700;
-    }
-
-    .middle-panel {
-      padding: 18px;
-      position: relative;
-      min-height: calc(100vh - 110px);
-      display: flex;
-      flex-direction: column;
-    }
-
-    .middle-head {
-      margin-bottom: 16px;
-    }
-
-    .current-section-title {
-      margin: 0;
-      font-size: 1.45rem;
-      font-weight: 700;
-    }
-
-    .current-section-subtitle {
-      margin: 8px 0 0 0;
-      color: var(--text);
-      font-size: 0.98rem;
-      font-weight: 600;
-      line-height: 1.4;
-    }
-
-    .current-section-date {
-      margin: 6px 0 0 0;
-      color: var(--muted);
-      font-size: 0.92rem;
-      line-height: 1.4;
-    }
-
-    .kyriale-badge {
-      display: inline-block;
-      margin-top: 10px;
-      border: 1px solid #d7d0c4;
-      background: #f6f1e8;
-      border-radius: 999px;
-      padding: 6px 10px;
-      font-size: 0.82rem;
-      color: #5f584d;
-    }
-
-    .search-zone {
-      position: relative;
-      margin-bottom: 16px;
-    }
-
-    .search-overlay {
-      position: absolute;
-      z-index: 30;
-      left: 0;
-      right: 0;
-      top: calc(100% + 8px);
-      background: #fffdfa;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
-      overflow: hidden;
-    }
-
-    .search-overlay-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
-      border-bottom: 1px solid var(--line);
-      background: #fbf8f2;
-    }
-
-    .search-results {
-      max-height: 320px;
-      overflow: auto;
-    }
-
-    .search-result-button {
-      width: 100%;
-      border: none;
-      border-bottom: 1px solid #eee7dc;
-      background: white;
-      text-align: left;
-      padding: 14px;
-      cursor: pointer;
-    }
-
-    .search-result-button:last-child {
-      border-bottom: none;
-    }
-
-    .search-result-button:hover {
-      background: #faf5ed;
-    }
-
-    .middle-actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
-    }
-
-    .primary-button {
-      border: 1px solid var(--line-strong);
-      background: white;
-      border-radius: 14px;
-      padding: 11px 14px;
-      cursor: pointer;
-      min-height: 44px;
-    }
-
-    .primary-button:hover,
-    .secondary-button:hover {
-      background: #fbf7f0;
-    }
-
-    .chants-list {
-      display: grid;
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .chant-card {
-      background: white;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 14px;
-    }
-
-    .chant-card.selected {
-      background: #f7f1e8;
-      border-color: #bcae99;
-    }
-
-    .chant-card-main {
-      display: grid;
-      grid-template-columns: 1fr auto auto;
-      gap: 10px;
-      align-items: start;
-    }
-
-    .chant-main-button {
-      border: none;
-      background: transparent;
-      text-align: left;
-      padding: 0;
-      cursor: pointer;
-      color: inherit;
-    }
-
-    .chant-title {
-      font-weight: 700;
-      font-size: 1rem;
-      line-height: 1.35;
-    }
-
-    .chant-meta {
-      margin-top: 6px;
-      color: var(--muted);
-      font-size: 0.84rem;
-      line-height: 1.4;
-    }
-
-    .heart-button,
-    .toggle-select-button,
-    .icon-button {
-      border: 1px solid var(--line);
-      background: white;
-      border-radius: 12px;
-      min-height: 40px;
-      padding: 0 12px;
-      cursor: pointer;
-    }
-
-    .heart-button {
-      width: 42px;
-      padding: 0;
-      font-size: 1rem;
-    }
-
-    .heart-button.liked {
-      color: var(--accent);
-      border-color: #ccaaaa;
-      background: var(--accent-soft);
-    }
-
-    .chant-preview {
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px solid #ece4d7;
-      color: #35322d;
-      font-size: 0.93rem;
-      line-height: 1.6;
-    }
-
-    .chant-preview p {
-      margin: 10px 0 0 0;
-    }
-
-    .middle-footer {
-      margin-top: auto;
-      display: grid;
-      gap: 12px;
-      padding-top: 14px;
-      border-top: 1px solid #e9e2d7;
-    }
-
-    .section-nav-buttons {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .nav-action-button {
-      border: 1px solid var(--line-strong);
-      background: white;
-      border-radius: 14px;
-      padding: 12px 14px;
-      min-height: 46px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    .nav-action-button:disabled {
-      opacity: 0.5;
-      cursor: default;
-    }
-
-    .favorites-button {
-      width: 100%;
-      border: 1px solid var(--line-strong);
-      background: white;
-      border-radius: 14px;
-      padding: 12px 14px;
-      min-height: 46px;
-      cursor: pointer;
-      font-weight: 600;
-    }
-
-    .favorites-panel {
-      background: #fffdfa;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 14px;
-    }
-
-    .favorite-group + .favorite-group {
-      margin-top: 14px;
-    }
-
-    .favorite-group-title {
-      font-size: 0.88rem;
-      color: var(--muted);
-      font-weight: 700;
-      margin-bottom: 8px;
-    }
-
-    .favorite-item {
-      font-size: 0.92rem;
-      line-height: 1.4;
-      padding: 4px 0;
-    }
-
-    .sheet-zone {
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      padding: 0;
-      background: transparent;
-      border: none;
-      box-shadow: none;
-      min-height: calc(100vh - 90px);
-    }
-
-    .sheet-a4 {
-      width: 210mm;
-      min-height: 297mm;
-      background: white;
-      border-radius: 0;
-      box-shadow: var(--shadow-sheet);
-      padding: 18mm 16mm 20mm 16mm;
-      position: relative;
-    }
-
-    .sheet-title {
-      margin: 0;
-      text-align: center;
-      font-size: 1.32rem;
-      font-weight: 700;
-      line-height: 1.35;
-    }
-
-    .sheet-meta {
-      margin: 8px 0 22px 0;
-      text-align: center;
-      font-size: 0.96rem;
-      color: #555;
-      line-height: 1.5;
-    }
-
-    .sheet-body {
-      display: grid;
-      gap: 18px;
-    }
-
-    .sheet-empty {
-      color: var(--muted);
-      font-size: 0.94rem;
-      line-height: 1.5;
-    }
-
-    .sheet-section h3 {
-      margin: 0 0 10px 0;
-      font-size: 1rem;
-      font-weight: 700;
-    }
-
-    .sheet-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
-      padding: 8px 0;
-      border-bottom: 1px solid #efefef;
-    }
-
-    .sheet-item:last-child {
-      border-bottom: none;
-    }
-
-    .sheet-item-controls {
-      display: flex;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-
-    .sheet-tools {
-      position: absolute;
-      left: 16mm;
-      right: 16mm;
-      bottom: 12mm;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      pointer-events: none;
-    }
-
-    .sheet-tools > * {
-      pointer-events: auto;
-    }
-
-    .download-button {
-      border: 1px solid #c89f9f;
-      background: #9f2323;
-      color: white;
-      border-radius: 12px;
-      padding: 10px 14px;
-      cursor: pointer;
-      min-height: 42px;
-      font-weight: 600;
-    }
-
-    .report-issue-button {
-      width: 48px;
-      height: 48px;
-      border: 1px solid var(--line-strong);
-      background: white;
-      border-radius: 999px;
-      cursor: pointer;
-      font-size: 1.1rem;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
-    }
-
-    @media (max-width: 1380px) {
-      .workspace-grid {
-        grid-template-columns: 250px 1fr;
-      }
-
-      .sheet-zone {
-        grid-column: 1 / -1;
-        justify-content: center;
-        margin-top: 6px;
-      }
-    }
-
-    @media (max-width: 980px) {
-      .site-shell {
-        padding: 14px;
-      }
-
-      .workspace-grid {
-        grid-template-columns: 1fr;
-      }
-
-      .left-panel,
-      .middle-panel {
-        position: static;
-      }
-
-      .sheet-zone {
-        overflow-x: auto;
-        justify-content: flex-start;
-      }
-
-      .sheet-a4 {
-        min-width: 210mm;
-      }
-
-      .chant-card-main {
-        grid-template-columns: 1fr;
-      }
-
-      .section-nav-buttons {
-        grid-template-columns: 1fr;
-      }
-    }
-
-    @media print {
-      body,
-      html {
-        background: white;
-      }
-
-      .site-header,
-      .screen-1,
-      .left-panel,
-      .middle-panel {
-        display: none !important;
-      }
-
-      .workspace,
-      .workspace-grid,
-      .sheet-zone {
-        display: block !important;
-        margin: 0;
-        padding: 0;
-        max-width: none;
-      }
-
-      .sheet-a4 {
-        width: auto;
-        min-height: auto;
-        box-shadow: none;
-        padding: 0;
-      }
-
-      .sheet-tools {
-        display: none !important;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Feuille de Messe</title>
+
+<style>
+
+body{
+margin:0;
+font-family:system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+background:#f4f1ea;
+color:#1f1f1f;
+}
+
+header{
+text-align:center;
+padding:20px 0 10px 0;
+}
+
+header h1{
+font-size:1.5rem;
+margin:0;
+}
+
+header p{
+font-size:0.9rem;
+color:#666;
+margin-top:6px;
+}
+
+.container{
+max-width:1400px;
+margin:auto;
+padding:20px;
+}
+
+.screen{
+display:none;
+}
+
+.screen.active{
+display:block;
+}
+
+.panel{
+background:white;
+border:1px solid #e3ded4;
+border-radius:16px;
+padding:20px;
+}
+
+.field{
+margin-bottom:20px;
+}
+
+label{
+font-weight:600;
+display:block;
+margin-bottom:6px;
+}
+
+input[type="date"], input[type="text"]{
+width:100%;
+padding:10px;
+border-radius:10px;
+border:1px solid #ccc;
+}
+
+.rites{
+display:flex;
+gap:10px;
+}
+
+.rite{
+padding:10px 16px;
+border:1px solid #ccc;
+border-radius:10px;
+background:white;
+cursor:pointer;
+}
+
+.workspace{
+display:grid;
+grid-template-columns:260px 1fr auto;
+gap:20px;
+}
+
+.left{
+background:white;
+border:1px solid #e3ded4;
+border-radius:16px;
+padding:15px;
+}
+
+.middle{
+background:white;
+border:1px solid #e3ded4;
+border-radius:16px;
+padding:15px;
+display:flex;
+flex-direction:column;
+}
+
+.section-title{
+font-size:1.3rem;
+margin-bottom:4px;
+}
+
+.section-subtitle{
+font-size:0.95rem;
+margin-bottom:10px;
+}
+
+.search{
+margin-bottom:15px;
+}
+
+.chants{
+flex:1;
+}
+
+.chant{
+border:1px solid #ddd;
+border-radius:12px;
+padding:10px;
+margin-bottom:10px;
+}
+
+.nav-buttons{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
+margin-top:10px;
+}
+
+.nav-buttons button{
+padding:10px;
+border-radius:10px;
+border:1px solid #ccc;
+background:white;
+cursor:pointer;
+}
+
+.favorites{
+margin-top:10px;
+padding:10px;
+border-radius:10px;
+border:1px solid #ccc;
+background:white;
+cursor:pointer;
+}
+
+.sheet-zone{
+display:flex;
+justify-content:center;
+}
+
+.sheet{
+width:210mm;
+min-height:297mm;
+background:white;
+padding:20mm 18mm;
+box-shadow:0 10px 25px rgba(0,0,0,0.15);
+}
+
+.sheet-title{
+text-align:center;
+font-size:1.4rem;
+margin:0;
+}
+
+.sheet-subtitle{
+text-align:center;
+font-size:0.95rem;
+color:#555;
+margin-bottom:20px;
+}
+
+.sheet-section{
+margin-bottom:15px;
+}
+
+.sheet-section h3{
+font-size:1rem;
+margin-bottom:6px;
+}
+
+.download{
+margin-top:15px;
+padding:10px;
+border-radius:10px;
+border:none;
+background:#8f1d1d;
+color:white;
+cursor:pointer;
+}
+
+</style>
 </head>
+
 <body>
-  <div class="site-shell">
-    <header class="site-header">
-      <h1 class="site-title">Feuille de Messe</h1>
-      <p class="site-subtitle">Préparez votre feuille de messe à partir de la date, du rite et de vos carnets de chants.</p>
-    </header>
 
-    <section id="screen-1" class="screen-1">
-      <div class="screen-1-grid">
-        <div class="panel-block">
-          <label for="date-input" class="field-label">
-            Date de la messe<br>
-            <span style="font-weight: 500;">(sert à déterminer le temps liturgique et la célébration du jour)</span>
-          </label>
-          <input id="date-input" class="date-input" type="date" />
-          <div id="liturgical-summary" class="liturgical-summary"></div>
-        </div>
+<header>
+<h1>Feuille de Messe</h1>
+<p>Préparez votre feuille de messe à partir de la date, du rite et des chants.</p>
+</header>
 
-        <div class="panel-block">
-          <h2 class="block-title">Choix du rite</h2>
-          <div class="rite-buttons">
-            <button type="button" class="rite-button" data-rite="ordinaire">Rite ordinaire</button>
-            <button type="button" class="rite-button" data-rite="extraordinaire">Rite extraordinaire</button>
-          </div>
-        </div>
+<div class="container">
 
-        <div class="panel-block">
-          <h2 class="block-title">Carnets de chants</h2>
-          <p class="field-help">Vous pouvez sélectionner un ou plusieurs carnets. Si aucun carnet n’est choisi, toute la base sera utilisée.</p>
+<!-- Écran 1 -->
 
-          <div id="selected-carnets" class="selected-carnets"></div>
+<section id="screen1" class="screen active panel">
 
-          <input
-            id="carnet-search"
-            class="search-input"
-            type="text"
-            placeholder="Rechercher un carnet..."
-            autocomplete="off"
-          />
+<div class="field">
+<label>
+Date de la messe<br>
+<span style="font-weight:400;font-size:0.9rem">
+(sert à déterminer le temps liturgique et la célébration du jour)
+</span>
+</label>
+<input id="dateInput" type="date">
+</div>
 
-          <div id="carnets-results" class="carnets-results"></div>
+<div class="field">
+<label>Choix du rite</label>
 
-          <div style="margin-top: 12px;">
-            <button id="clear-carnets-button" type="button" class="secondary-button">Réinitialiser la sélection</button>
-          </div>
-        </div>
-      </div>
-    </section>
+<div class="rites">
+<button class="rite" data-rite="ordinaire">Rite ordinaire</button>
+<button class="rite" data-rite="extraordinaire">Rite extraordinaire</button>
+</div>
 
-    <section id="workspace" class="workspace">
-      <div class="workspace-grid">
-        <aside class="workspace-panel left-panel">
-          <div class="left-summary">
-            <div id="left-summary-date" class="left-summary-item"></div>
-            <div id="left-summary-rite" class="left-summary-item"></div>
-            <div id="left-summary-season" class="left-summary-item"></div>
-            <div id="left-selected-carnets" class="left-summary-item"></div>
-          </div>
+</div>
 
-          <div id="sections-nav" class="sections-nav"></div>
-        </aside>
+<div class="field">
+<label>Carnets de chants</label>
+<input id="searchCarnet" type="text" placeholder="Rechercher un carnet">
+</div>
 
-        <main class="workspace-panel middle-panel">
-          <div class="middle-head">
-            <h2 id="current-section-title" class="current-section-title"></h2>
-            <div id="current-section-subtitle" class="current-section-subtitle"></div>
-            <div id="current-section-date" class="current-section-date"></div>
-            <div id="kyriale-badge" class="kyriale-badge hidden"></div>
-          </div>
+</section>
 
-          <div class="search-zone">
-            <input
-              id="chant-search"
-              class="search-input"
-              type="text"
-              placeholder="Rechercher un chant..."
-              autocomplete="off"
-            />
 
-            <div id="search-overlay" class="search-overlay hidden">
-              <div class="search-overlay-head">
-                <div id="search-overlay-label">0 résultat</div>
-                <button id="close-search-overlay" type="button" class="secondary-button">Fermer</button>
-              </div>
-              <div id="search-results" class="search-results"></div>
-            </div>
-          </div>
+<!-- Écran 2 -->
 
-          <div class="middle-actions">
-            <button id="refresh-button" type="button" class="primary-button">Rafraîchir les suggestions</button>
-          </div>
+<section id="screen2" class="screen">
 
-          <div id="chants-list" class="chants-list"></div>
+<div class="workspace">
 
-          <div class="middle-footer">
-            <div class="section-nav-buttons">
-              <button id="previous-section-button" type="button" class="nav-action-button">← Précédent</button>
-              <button id="skip-section-button" type="button" class="nav-action-button">Suivant →</button>
-            </div>
+<div class="left">
 
-            <button id="toggle-favorites-button" type="button" class="favorites-button">Favoris</button>
+<div id="summary"></div>
 
-            <div id="favorites-panel" class="favorites-panel hidden">
-              <div id="favorites-content"></div>
-            </div>
-          </div>
-        </main>
+<div id="sections"></div>
 
-        <section class="sheet-zone" aria-label="Feuille de messe">
-          <div class="sheet-a4">
-            <h2 id="sheet-title" class="sheet-title">Feuille de messe</h2>
-            <div id="sheet-meta" class="sheet-meta"></div>
+</div>
 
-            <div id="sheet-body" class="sheet-body"></div>
 
-            <div class="sheet-tools">
-              <button id="download-button" type="button" class="download-button">Télécharger la feuille</button>
-              <button id="report-issue-button" type="button" class="report-issue-button" title="Signaler une erreur" aria-label="Signaler une erreur">💬</button>
-            </div>
-          </div>
-        </section>
-      </div>
-    </section>
-  </div>
+<div class="middle">
 
-  <script src="./app.js"></script>
+<div class="section-title" id="sectionTitle"></div>
+<div class="section-subtitle" id="sectionSubtitle"></div>
+
+<input id="chantSearch" class="search" type="text" placeholder="Rechercher un chant">
+
+<div id="chants" class="chants"></div>
+
+<div class="nav-buttons">
+<button id="prev">← Précédent</button>
+<button id="next">Suivant →</button>
+</div>
+
+<button id="favoritesButton" class="favorites">Favoris</button>
+
+</div>
+
+
+<div class="sheet-zone">
+
+<div class="sheet">
+
+<h2 id="sheetTitle" class="sheet-title"></h2>
+<div id="sheetSubtitle" class="sheet-subtitle"></div>
+
+<div id="sheetContent"></div>
+
+<button id="download" class="download">Télécharger la feuille</button>
+
+</div>
+
+</div>
+
+</div>
+
+</section>
+
+</div>
+
+<script type="module" src="./calendrier/calendrier_liturgique.js"></script>
+<script src="./app.js"></script>
+
 </body>
 </html>
