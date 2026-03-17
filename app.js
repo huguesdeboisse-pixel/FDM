@@ -281,6 +281,10 @@ function extractAvailableCarnets(chants) {
    CALCUL LITURGIQUE
 ================================ */
 
+/* ===============================
+   CALCUL LITURGIQUE
+================================ */
+
 function updateLiturgicalInfo() {
   if (!state.rite) {
     state.liturgicalInfo = null;
@@ -309,6 +313,10 @@ function updateLiturgicalInfo() {
     };
   }
 }
+
+/* ===============================
+   INITIALISATION
+================================ */
 
 /* ===============================
    INITIALISATION
