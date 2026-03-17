@@ -1,254 +1,221 @@
-// calendrier/temporal_extraordinaire.js
+import { daysBetween } from "./comput.js";
 
-import {
-  parseISODate,
-  computeMobileFeasts,
-  isSunday
-} from "./comput.js";
+export function getTemporalExtraordinaire(date, easter) {
 
-export function buildTemporalExtraordinaire(dateISO) {
+  const year = date.getFullYear();
 
-  const { year } = parseISODate(dateISO);
-  const mobiles = computeMobileFeasts(year);
+  const ashWednesday = new Date(easter);
+  ashWednesday.setDate(easter.getDate() - 46);
 
-  const results = [];
+  const pentecost = new Date(easter);
+  pentecost.setDate(easter.getDate() + 49);
 
-  // --- Temps de Septuagésime
+  const septuagesima = new Date(easter);
+  septuagesima.setDate(easter.getDate() - 63);
 
-  if (dateISO === mobiles.septuagesima) {
-    results.push(buildCelebration(
-      "septuagesima",
-      "Dimanche de la Septuagésime",
-      "septuagesime",
-      "dimanche_I_classe",
-      "violet",
-      2
-    ));
-  }
+  const sexagesima = new Date(easter);
+  sexagesima.setDate(easter.getDate() - 56);
 
-  if (dateISO === mobiles.sexagesima) {
-    results.push(buildCelebration(
-      "sexagesima",
-      "Dimanche de la Sexagésime",
-      "septuagesime",
-      "dimanche_I_classe",
-      "violet",
-      2
-    ));
-  }
+  const quinquagesima = new Date(easter);
+  quinquagesima.setDate(easter.getDate() - 49);
 
-  if (dateISO === mobiles.quinquagesima) {
-    results.push(buildCelebration(
-      "quinquagesima",
-      "Dimanche de la Quinquagésime",
-      "septuagesime",
-      "dimanche_I_classe",
-      "violet",
-      2
-    ));
-  }
+  const adventStart = getAdventStart(year);
+  const christmas = new Date(year, 11, 25);
 
-  // --- Carême
+  const sunday = date.getDay() === 0;
 
-  if (dateISO === mobiles.ashWednesday) {
-    results.push(buildCelebration(
-      "ash_wednesday",
-      "Mercredi des Cendres",
-      "careme",
-      "I_classe",
-      "violet",
-      1
-    ));
-  }
+  /* ---------------- Avent ---------------- */
 
-  if (dateISO === mobiles.firstSundayOfLent) {
-    results.push(buildCelebration(
-      "lent_1",
-      "1er dimanche de Carême",
-      "careme",
-      "dimanche_I_classe",
-      "violet",
-      1
-    ));
-  }
+  if (date >= adventStart && date < christmas) {
 
-  if (dateISO === mobiles.palmSunday) {
-    results.push(buildCelebration(
-      "palm_sunday",
-      "Dimanche des Rameaux",
-      "semaine_sainte",
-      "I_classe",
-      "rouge",
-      1
-    ));
-  }
+    if (sunday) {
 
-  if (dateISO === mobiles.goodFriday) {
-    results.push(buildCelebration(
-      "good_friday",
-      "Vendredi Saint",
-      "semaine_sainte",
-      "I_classe",
-      "rouge",
-      1
-    ));
-  }
+      const n = Math.floor(daysBetween(adventStart, date) / 7) + 1;
 
-  // --- Temps pascal
+      return {
+        id: "dimanche_avent",
+        label: ordinal(n) + " dimanche de l'Avent",
+        season: { id: "avent", label: "Avent" },
+        color: { id: "violet", label: "violets" },
+        rank: { id: "I_classe", label: "I classe" },
+        privilegedSeason: true,
+        source: "temporal"
+      };
 
-  if (dateISO === mobiles.easter) {
-    results.push(buildCelebration(
-      "easter",
-      "Dimanche de Pâques",
-      "temps_pascal",
-      "I_classe",
-      "blanc",
-      1
-    ));
-  }
+    }
 
-  if (dateISO === mobiles.ascension) {
-    results.push(buildCelebration(
-      "ascension",
-      "Ascension du Seigneur",
-      "temps_pascal",
-      "I_classe",
-      "blanc",
-      1
-    ));
-  }
-
-  if (dateISO === mobiles.pentecost) {
-    results.push(buildCelebration(
-      "pentecost",
-      "Pentecôte",
-      "temps_pascal",
-      "I_classe",
-      "rouge",
-      1
-    ));
-  }
-
-  // --- Dimanches après Pentecôte
-
-  if (isSunday(dateISO)) {
-
-    results.push(buildCelebration(
-      "post_pentecost_sunday",
-      "Dimanche après la Pentecôte",
-      "temps_apres_pentecote",
-      "dimanche_II_classe",
-      "vert",
-      5
-    ));
+    return {
+      id: "avent",
+      label: "Temps de l'Avent",
+      season: { id: "avent", label: "Avent" },
+      color: { id: "violet", label: "violets" },
+      rank: { id: "ferie", label: "Férie" },
+      privilegedSeason: true,
+      source: "temporal"
+    };
 
   }
 
-  // --- Féries
+  /* ---------------- Septuagésime ---------------- */
 
-  if (results.length === 0) {
+  if (date >= septuagesima && date < ashWednesday) {
 
-    results.push(buildCelebration(
-      "feria",
-      "Férie",
-      "temps_ordinaire",
-      "IV_classe",
-      "vert",
-      10
-    ));
+    if (sunday) {
+
+      if (date.getTime() === septuagesima.getTime())
+        return createSeptuagesima("Septuagésime");
+
+      if (date.getTime() === sexagesima.getTime())
+        return createSeptuagesima("Sexagésime");
+
+      if (date.getTime() === quinquagesima.getTime())
+        return createSeptuagesima("Quinquagésime");
+
+    }
+
+    return {
+      id: "temps_septuagesime",
+      label: "Temps de Septuagésime",
+      season: { id: "septuagesime", label: "Temps de Septuagésime" },
+      color: { id: "violet", label: "violets" },
+      rank: { id: "ferie", label: "Férie" },
+      privilegedSeason: true,
+      source: "temporal"
+    };
 
   }
 
-  return results;
+  /* ---------------- Carême ---------------- */
 
-}
+  if (date >= ashWednesday && date < easter) {
 
-function buildCelebration(
-  id,
-  label,
-  season,
-  rank,
-  color,
-  priority
-) {
+    if (sunday) {
+
+      const firstSunday = new Date(ashWednesday);
+      firstSunday.setDate(ashWednesday.getDate() + (7 - ashWednesday.getDay()));
+
+      const n = Math.floor(daysBetween(firstSunday, date) / 7) + 1;
+
+      return {
+        id: "dimanche_careme",
+        label: ordinal(n) + " dimanche de Carême",
+        season: { id: "careme", label: "Carême" },
+        color: { id: "violet", label: "violets" },
+        rank: { id: "I_classe", label: "I classe" },
+        privilegedSeason: true,
+        source: "temporal"
+      };
+
+    }
+
+    return {
+      id: "careme",
+      label: "Temps du Carême",
+      season: { id: "careme", label: "Carême" },
+      color: { id: "violet", label: "violets" },
+      rank: { id: "ferie", label: "Férie" },
+      privilegedSeason: true,
+      source: "temporal"
+    };
+
+  }
+
+  /* ---------------- Temps pascal ---------------- */
+
+  if (date >= easter && date <= pentecost) {
+
+    if (sunday) {
+
+      const n = Math.floor(daysBetween(easter, date) / 7) + 1;
+
+      return {
+        id: "dimanche_pascal",
+        label: ordinal(n) + " dimanche après Pâques",
+        season: { id: "paques", label: "Temps pascal" },
+        color: { id: "blanc", label: "blancs" },
+        rank: { id: "I_classe", label: "I classe" },
+        privilegedSeason: true,
+        source: "temporal"
+      };
+
+    }
+
+    return {
+      id: "temps_pascal",
+      label: "Temps pascal",
+      season: { id: "paques", label: "Temps pascal" },
+      color: { id: "blanc", label: "blancs" },
+      rank: { id: "ferie", label: "Férie" },
+      privilegedSeason: true,
+      source: "temporal"
+    };
+
+  }
+
+  /* ---------------- Dimanches après Pentecôte ---------------- */
+
+  if (sunday && date > pentecost) {
+
+    const first = new Date(pentecost);
+    first.setDate(pentecost.getDate() + 7);
+
+    const n = Math.floor(daysBetween(first, date) / 7) + 1;
+
+    return {
+      id: "dimanche_apres_pentecote",
+      label: ordinal(n) + " dimanche après la Pentecôte",
+      season: { id: "pentecote", label: "Temps après la Pentecôte" },
+      color: { id: "vert", label: "verts" },
+      rank: { id: "II_classe", label: "II classe" },
+      privilegedSeason: false,
+      source: "temporal"
+    };
+
+  }
 
   return {
-
-    id,
-
-    source: "temporal",
-
-    celebration: {
-      id,
-      label
-    },
-
-    season: {
-      id: season,
-      label: mapSeason(season)
-    },
-
-    rank: {
-      id: rank,
-      label: mapRank(rank)
-    },
-
-    color: {
-      id: color,
-      label: mapColor(color)
-    },
-
-    priority
-
+    id: "temps_ferial",
+    label: "Férie",
+    season: { id: "ferial", label: "Temps ordinaire" },
+    color: { id: "vert", label: "verts" },
+    rank: { id: "ferie", label: "Férie" },
+    privilegedSeason: false,
+    source: "temporal"
   };
 
 }
 
-function mapSeason(id) {
+/* ---------- Fonctions utilitaires ---------- */
 
-  const map = {
+function createSeptuagesima(name) {
 
-    septuagesime: "Temps de Septuagésime",
-    careme: "Carême",
-    semaine_sainte: "Semaine sainte",
-    temps_pascal: "Temps pascal",
-    temps_apres_pentecote: "Temps après la Pentecôte",
-    temps_ordinaire: "Temps ordinaire"
-
+  return {
+    id: "dimanche_septuagesime",
+    label: name,
+    season: { id: "septuagesime", label: "Temps de Septuagésime" },
+    color: { id: "violet", label: "violets" },
+    rank: { id: "II_classe", label: "II classe" },
+    privilegedSeason: true,
+    source: "temporal"
   };
-
-  return map[id] || id;
 
 }
 
-function mapRank(id) {
+function getAdventStart(year) {
 
-  const map = {
+  const christmas = new Date(year, 11, 25);
 
-    I_classe: "Ire classe",
-    II_classe: "IIe classe",
-    III_classe: "IIIe classe",
-    IV_classe: "IVe classe",
-    dimanche_I_classe: "Dimanche de Ire classe",
-    dimanche_II_classe: "Dimanche de IIe classe"
+  const sunday = new Date(christmas);
+  sunday.setDate(christmas.getDate() - christmas.getDay());
+  sunday.setDate(sunday.getDate() - 21);
 
-  };
-
-  return map[id] || id;
+  return sunday;
 
 }
 
-function mapColor(id) {
+function ordinal(n) {
 
-  const map = {
-
-    blanc: "ornements blancs",
-    rouge: "ornements rouges",
-    vert: "ornements verts",
-    violet: "ornements violets"
-
-  };
-
-  return map[id] || id;
+  if (n === 1) return "1er";
+  return n + "e";
 
 }
