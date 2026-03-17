@@ -1,14 +1,10 @@
 /* =========================================================
    FEUILLE DE MESSE - APP.JS
-   Version robuste, défensive, orientée "zéro plantage"
+   Version robuste et conforme aux dernières décisions
    ========================================================= */
 
-/* ===============================
-   CONSTANTES / CONFIG
-================================ */
-
-const STORAGE_KEY_GLOBAL = "fdm_global_v2";
-const STORAGE_KEY_RITE_PREFIX = "fdm_rite_";
+const STORAGE_KEY_GLOBAL = "fdm_global_v3";
+const STORAGE_KEY_RITE_PREFIX = "fdm_rite_v3_";
 
 const SECTIONS = {
   ordinaire: [
@@ -43,9 +39,9 @@ const FUNCTION_ALIASES = {
   "Introït": ["introit", "introït"],
   "Kyrie": ["kyrie"],
   "Gloria": ["gloria"],
-  "Psaume": ["psaume", "psalm"],
-  "Credo": ["credo", "credoo"],
-  "Offertoire": ["offertoire", "offertory", "préparation des dons", "preparation des dons"],
+  "Psaume": ["psaume"],
+  "Credo": ["credo", "crédo"],
+  "Offertoire": ["offertoire", "préparation des dons", "preparation des dons"],
   "Sanctus": ["sanctus"],
   "Anamnèse": ["anamnese", "anamnèse"],
   "Amen": ["amen"],
@@ -55,50 +51,40 @@ const FUNCTION_ALIASES = {
   "Antienne mariale": ["antienne mariale", "salve regina", "alma redemptoris", "ave regina", "regina caeli"]
 };
 
-/* ===============================
-   ETAT GLOBAL
-================================ */
-
 const state = {
   chants: [],
   chantsById: new Map(),
 
   rite: "",
   date: "",
-
   liturgicalInfo: null,
-  currentSectionIndex: 0,
 
+  currentSectionIndex: 0,
   selectedBySection: {},
   likes: {},
+  visitedSections: [],
+
+  currentSuggestions: [],
+  currentSearch: "",
 
   selectedCarnets: [],
   availableCarnets: [],
 
-  visitedSections: [],
-  favoritesOnly: false,
-  lastSearch: "",
-  currentSuggestions: [],
-
   ui: {
-    searchOpen: false
+    favoritesOpen: false
   }
 };
 
 /* ===============================
-   UTILITAIRES GENERAUX
+   OUTILS
 ================================ */
 
-function qs(selector) {
-  return document.querySelector(selector);
+function byId(id) {
+  return document.getElementById(id);
 }
 
 function qsa(selector) {
   return Array.from(document.querySelectorAll(selector));
-}
-
-function byId(id) {
-  return document.getElementById(id);
 }
 
 function safeText(value) {
@@ -128,11 +114,6 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
-function todayLocalISO() {
-  const now = new Date();
-  return toISODate(now);
-}
-
 function toISODate(date) {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -141,21 +122,20 @@ function toISODate(date) {
 }
 
 function fromISODate(isoDate) {
-  if (!isoDate || !/^\d{4}-\d{2}-\d{2}$/.test(isoDate)) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(safeText(isoDate))) return null;
   const [y, m, d] = isoDate.split("-").map(Number);
   return new Date(y, m - 1, d, 12, 0, 0);
 }
 
 function formatDateFr(isoDate) {
   const date = fromISODate(isoDate);
-  if (!date) return "Non renseignée";
-  return date.toLocaleDateString("fr-FR");
+  return date ? date.toLocaleDateString("fr-FR") : "Non renseignée";
 }
 
 function getNextSundayISO() {
   const now = new Date();
   const date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0, 0);
-  const day = date.getDay(); // 0 = dimanche
+  const day = date.getDay();
   const offset = day === 0 ? 7 : 7 - day;
   date.setDate(date.getDate() + offset);
   return toISODate(date);
@@ -169,31 +149,28 @@ function getCurrentSection() {
   return getSectionsForCurrentRite()[state.currentSectionIndex] || "";
 }
 
-function hasResumeForRite(rite) {
-  if (!rite || !SECTIONS[rite]) return false;
-  const saved = loadRiteState(rite);
-  if (!saved) return false;
+function isLiked(chantId) {
+  return Boolean(state.likes[chantId]);
+}
 
-  const hasSelected = saved.selectedBySection && Object.values(saved.selectedBySection).some(
-    (arr) => Array.isArray(arr) && arr.length > 0
-  );
+function isSelectedInSection(chantId, section) {
+  const list = state.selectedBySection[section];
+  return Array.isArray(list) && list.includes(chantId);
+}
 
-  return Boolean(
-    saved.date ||
-    hasSelected ||
-    (typeof saved.currentSectionIndex === "number" && saved.currentSectionIndex > 0)
-  );
+function hasSelectionsInSection(section) {
+  const list = state.selectedBySection[section];
+  return Array.isArray(list) && list.length > 0;
 }
 
 /* ===============================
-   STOCKAGE LOCAL
+   STORAGE
 ================================ */
 
 function loadJsonFromStorage(key, fallback = null) {
   try {
     const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    return JSON.parse(raw);
+    return raw ? JSON.parse(raw) : fallback;
   } catch (error) {
     console.warn("Lecture localStorage impossible :", key, error);
     return fallback;
@@ -219,10 +196,10 @@ function loadGlobalState() {
 
 function saveGlobalState() {
   saveJsonToStorage(STORAGE_KEY_GLOBAL, {
-    likes: state.likes || {},
-    selectedCarnets: state.selectedCarnets || [],
-    lastDate: state.date || "",
-    lastRite: state.rite || ""
+    likes: state.likes,
+    selectedCarnets: state.selectedCarnets,
+    lastDate: state.date,
+    lastRite: state.rite
   });
 }
 
@@ -232,26 +209,24 @@ function loadRiteState(rite) {
 
 function saveRiteState(rite) {
   if (!rite) return;
-
   saveJsonToStorage(`${STORAGE_KEY_RITE_PREFIX}${rite}`, {
-    date: state.date || "",
-    currentSectionIndex: state.currentSectionIndex || 0,
-    selectedBySection: state.selectedBySection || {},
-    visitedSections: state.visitedSections || []
+    date: state.date,
+    currentSectionIndex: state.currentSectionIndex,
+    selectedBySection: state.selectedBySection,
+    visitedSections: state.visitedSections
   });
 }
 
 function restoreLocalState() {
-  const global = loadGlobalState();
-
-  state.likes = global?.likes || {};
-  state.selectedCarnets = global?.selectedCarnets || [];
-  state.date = global?.lastDate || "";
-  state.rite = global?.lastRite || "";
+  const globalState = loadGlobalState();
+  state.likes = globalState?.likes || {};
+  state.selectedCarnets = globalState?.selectedCarnets || [];
+  state.date = globalState?.lastDate || "";
+  state.rite = globalState?.lastRite || "";
 }
 
 /* ===============================
-   CHARGEMENT CHANTS
+   CHARGEMENT DES CHANTS
 ================================ */
 
 async function loadChants() {
@@ -262,9 +237,7 @@ async function loadChants() {
     }
 
     const data = await response.json();
-    const chants = Array.isArray(data) ? data : [];
-
-    state.chants = chants.filter(Boolean);
+    state.chants = Array.isArray(data) ? data.filter(Boolean) : [];
     state.chantsById.clear();
 
     for (const chant of state.chants) {
@@ -283,10 +256,10 @@ async function loadChants() {
 }
 
 function extractAvailableCarnets(chants) {
-  const results = [];
+  const values = [];
 
-  for (const chant of chants || []) {
-    const candidates = [
+  for (const chant of chants) {
+    const sources = [
       chant?.carnet,
       chant?.source,
       chant?.source_pdf,
@@ -294,14 +267,14 @@ function extractAvailableCarnets(chants) {
       chant?.metadata?.source
     ];
 
-    for (const c of candidates) {
-      if (c && typeof c === "string") {
-        results.push(c);
+    for (const source of sources) {
+      if (source && typeof source === "string") {
+        values.push(source);
       }
     }
   }
 
-  return uniqueArray(results).sort((a, b) => a.localeCompare(b, "fr"));
+  return uniqueArray(values).sort((a, b) => a.localeCompare(b, "fr"));
 }
 
 /* ===============================
@@ -318,31 +291,22 @@ function updateLiturgicalInfo() {
 
   if (typeof window.calculerTempsLiturgique !== "function") {
     state.liturgicalInfo = {
-      display: {
-        title: "",
-        subtitle: ""
-      },
-      season: {},
-      celebration: {},
-      color: {},
-      rank: {}
+      display: { title: "", subtitle: "" },
+      season: {}
     };
     return;
   }
 
   try {
-    state.liturgicalInfo = window.calculerTempsLiturgique(effectiveDate, state.rite) || null;
+    state.liturgicalInfo = window.calculerTempsLiturgique(effectiveDate, state.rite) || {
+      display: { title: "", subtitle: "" },
+      season: {}
+    };
   } catch (error) {
     console.error("Erreur de calcul liturgique :", error);
     state.liturgicalInfo = {
-      display: {
-        title: "",
-        subtitle: ""
-      },
-      season: {},
-      celebration: {},
-      color: {},
-      rank: {}
+      display: { title: "", subtitle: "" },
+      season: {}
     };
   }
 }
@@ -362,17 +326,20 @@ async function init() {
     }
 
     syncDateInput();
-
     await loadChants();
+
     bindEvents();
+    ensureFavoritesModal();
 
     if (state.rite && SECTIONS[state.rite]) {
-      const savedRite = loadRiteState(state.rite);
-      if (savedRite) {
-        state.currentSectionIndex = clamp(savedRite.currentSectionIndex || 0, 0, (SECTIONS[state.rite].length - 1));
-        state.selectedBySection = savedRite.selectedBySection || {};
-        state.visitedSections = savedRite.visitedSections || [];
+      const saved = loadRiteState(state.rite);
+      if (saved) {
+        state.date = saved.date || state.date || getNextSundayISO();
+        state.currentSectionIndex = clamp(saved.currentSectionIndex || 0, 0, getSectionsForCurrentRite().length - 1);
+        state.selectedBySection = saved.selectedBySection || {};
+        state.visitedSections = saved.visitedSections || [];
       }
+      syncDateInput();
       updateLiturgicalInfo();
       render();
       showScreen(2);
@@ -388,7 +355,7 @@ async function init() {
 }
 
 /* ===============================
-   EVENEMENTS
+   ÉVÉNEMENTS
 ================================ */
 
 function bindEvents() {
@@ -398,86 +365,54 @@ function bindEvents() {
     dateInput.addEventListener("input", onDateChange);
   }
 
-  const dateCard = byId("dateCard");
-  if (dateCard && dateInput) {
-    bindDateCard(dateCard, dateInput);
-  }
+  bindDateCard();
 
-  qsa("[data-rite]").forEach((btn) => {
-    btn.addEventListener("click", () => onRiteSelect(btn.dataset.rite));
+  qsa("[data-rite]").forEach((button) => {
+    button.addEventListener("click", () => onRiteSelect(button.dataset.rite));
   });
 
-  const prevBtn = byId("prev");
-  if (prevBtn) {
-    prevBtn.addEventListener("click", prevSection);
+  const prevButton = byId("prev");
+  if (prevButton) {
+    prevButton.addEventListener("click", prevSection);
   }
 
-  const nextBtn = byId("next");
-  if (nextBtn) {
-    nextBtn.addEventListener("click", nextSection);
+  const nextButton = byId("next");
+  if (nextButton) {
+    nextButton.addEventListener("click", nextSection);
   }
 
-  const backBtn = byId("backToSetup");
-  if (backBtn) {
-    backBtn.addEventListener("click", () => {
+  const backButton = byId("backToSetup");
+  if (backButton) {
+    backButton.addEventListener("click", () => {
       saveCurrentRiteState();
       showScreen(1);
     });
   }
 
-  const favoritesBtn = byId("favoritesButton");
-  if (favoritesBtn) {
-    favoritesBtn.addEventListener("click", () => {
-      state.favoritesOnly = !state.favoritesOnly;
-      renderSuggestions();
-      renderFavoritesButton();
-    });
+  const favoritesButton = byId("favoritesButton");
+  if (favoritesButton) {
+    favoritesButton.addEventListener("click", openFavoritesModal);
   }
 
   const chantSearch = byId("chantSearch");
   if (chantSearch) {
-    chantSearch.addEventListener("input", onSearchInput);
-    chantSearch.addEventListener("focus", onSearchInput);
-  }
-
-  const closeSearchOverlay = byId("closeSearchOverlay");
-  if (closeSearchOverlay) {
-    closeSearchOverlay.addEventListener("click", closeSearchPanel);
-  }
-
-  const carnetSearch = byId("searchCarnet");
-  if (carnetSearch) {
-    carnetSearch.addEventListener("input", renderCarnets);
-  }
-
-  const downloadBtn = byId("download");
-  if (downloadBtn) {
-    downloadBtn.addEventListener("click", () => {
-      window.print();
+    chantSearch.addEventListener("input", (event) => {
+      state.currentSearch = event.target.value || "";
+      renderSuggestions();
     });
   }
 
-  const reportBtn = byId("reportErrorButton");
-  if (reportBtn) {
-    reportBtn.addEventListener("click", openReportPanel);
+  const downloadButton = byId("download");
+  if (downloadButton) {
+    downloadButton.addEventListener("click", () => window.print());
   }
-
-  document.addEventListener("click", (event) => {
-    const overlay = byId("searchOverlay");
-    const input = byId("chantSearch");
-    if (!overlay || !input) return;
-    if (!state.ui.searchOpen) return;
-
-    const clickInsideOverlay = overlay.contains(event.target);
-    const clickInsideInput = input.contains(event.target);
-
-    if (!clickInsideOverlay && !clickInsideInput) {
-      closeSearchPanel();
-    }
-  });
 }
 
-function bindDateCard(card, input) {
+function bindDateCard() {
+  const card = byId("dateCard");
+  const input = byId("dateInput");
+  if (!card || !input) return;
+
   const openPicker = () => {
     try {
       input.focus();
@@ -487,7 +422,6 @@ function bindDateCard(card, input) {
         input.click();
       }
     } catch (error) {
-      console.warn("Ouverture du calendrier impossible :", error);
       input.focus();
     }
   };
@@ -506,7 +440,7 @@ function bindDateCard(card, input) {
 }
 
 /* ===============================
-   NAVIGATION ECRANS
+   NAVIGATION D'ÉCRAN
 ================================ */
 
 function showScreen(screenNumber) {
@@ -516,6 +450,7 @@ function showScreen(screenNumber) {
   if (screen1) {
     screen1.classList.toggle("active", screenNumber === 1);
   }
+
   if (screen2) {
     screen2.classList.toggle("active", screenNumber === 2);
   }
@@ -525,16 +460,29 @@ function showScreen(screenNumber) {
    RITE / REPRISE
 ================================ */
 
+function hasResumeForRite(rite) {
+  const saved = loadRiteState(rite);
+  if (!saved) return false;
+
+  const hasFilledSection = Object.values(saved.selectedBySection || {}).some(
+    (list) => Array.isArray(list) && list.length > 0
+  );
+
+  return Boolean(
+    saved.date ||
+    hasFilledSection ||
+    (typeof saved.currentSectionIndex === "number" && saved.currentSectionIndex > 0)
+  );
+}
+
 function onRiteSelect(rite) {
   if (!SECTIONS[rite]) return;
 
-  const hasResume = hasResumeForRite(rite);
-
   state.rite = rite;
-  state.favoritesOnly = false;
-  state.lastSearch = "";
+  state.currentSearch = "";
+  state.ui.favoritesOpen = false;
 
-  if (hasResume) {
+  if (hasResumeForRite(rite)) {
     const reprendre = window.confirm("Un brouillon local existe pour ce rite. Reprendre ?");
     if (reprendre) {
       restoreRiteState(rite);
@@ -560,21 +508,22 @@ function onRiteSelect(rite) {
 function restoreRiteState(rite) {
   const saved = loadRiteState(rite);
 
-  state.selectedBySection = saved?.selectedBySection || {};
-  state.currentSectionIndex = clamp(saved?.currentSectionIndex || 0, 0, (SECTIONS[rite].length - 1));
-  state.visitedSections = saved?.visitedSections || [];
   state.date = saved?.date || state.date || getNextSundayISO();
+  state.currentSectionIndex = clamp(saved?.currentSectionIndex || 0, 0, SECTIONS[rite].length - 1);
+  state.selectedBySection = saved?.selectedBySection || {};
+  state.visitedSections = saved?.visitedSections || [];
 }
 
 function resetRiteState(rite) {
-  state.selectedBySection = {};
   state.currentSectionIndex = 0;
+  state.selectedBySection = {};
   state.visitedSections = [];
-  state.date = state.date || getNextSundayISO();
 
-  for (const section of SECTIONS[rite] || []) {
+  for (const section of SECTIONS[rite]) {
     state.selectedBySection[section] = [];
   }
+
+  state.date = state.date || getNextSundayISO();
 }
 
 function saveCurrentRiteState() {
@@ -605,14 +554,20 @@ function onDateChange(event) {
   saveCurrentRiteState();
   saveGlobalState();
   renderSummary();
-  renderSheet();
   renderSectionTitle();
   renderSuggestions();
+  renderSheet();
 }
 
 /* ===============================
-   NAVIGATION SECTIONS
+   NAVIGATION ENTRE SECTIONS
 ================================ */
+
+function markCurrentSectionVisited() {
+  const section = getCurrentSection();
+  if (!section) return;
+  state.visitedSections = uniqueArray([...state.visitedSections, section]);
+}
 
 function prevSection() {
   if (!state.rite) return;
@@ -633,116 +588,18 @@ function nextSection() {
 function goToSection(index) {
   if (!state.rite) return;
   state.currentSectionIndex = clamp(index, 0, getSectionsForCurrentRite().length - 1);
-  markCurrentSectionVisited();
   saveCurrentRiteState();
   render();
 }
 
-function markCurrentSectionVisited() {
-  const section = getCurrentSection();
-  if (!section) return;
-  state.visitedSections = uniqueArray([...(state.visitedSections || []), section]);
-}
-
 /* ===============================
-   RECHERCHE
-================================ */
-
-function onSearchInput(event) {
-  state.lastSearch = event?.target?.value || "";
-  renderSearchOverlay();
-}
-
-function openSearchPanel() {
-  state.ui.searchOpen = true;
-  const overlay = byId("searchOverlay");
-  if (overlay) {
-    overlay.hidden = false;
-  }
-}
-
-function closeSearchPanel() {
-  state.ui.searchOpen = false;
-  const overlay = byId("searchOverlay");
-  if (overlay) {
-    overlay.hidden = true;
-  }
-}
-
-function getSearchResults(query) {
-  const q = normalize(query);
-  if (!q) return [];
-
-  const filtered = getFilteredChantsBase().filter((chant) => {
-    const title = normalize(chant?.titre);
-    const titleNorm = normalize(chant?.titre_normalise);
-    const fullText = normalize(chant?.texte_normalise?.texte_complet);
-    const refrain = normalize(chant?.texte_normalise?.refrain);
-
-    return (
-      title.includes(q) ||
-      titleNorm.includes(q) ||
-      refrain.includes(q) ||
-      fullText.includes(q)
-    );
-  });
-
-  return filtered.slice(0, 30);
-}
-
-function renderSearchOverlay() {
-  const overlay = byId("searchOverlay");
-  const resultsBox = byId("searchResults");
-  const input = byId("chantSearch");
-
-  if (!overlay || !resultsBox || !input) return;
-
-  const query = input.value || "";
-  if (!query.trim()) {
-    resultsBox.innerHTML = "";
-    closeSearchPanel();
-    return;
-  }
-
-  const results = getSearchResults(query);
-  openSearchPanel();
-
-  if (!results.length) {
-    resultsBox.innerHTML = `<div class="search-empty">Aucun chant trouvé.</div>`;
-    return;
-  }
-
-  resultsBox.innerHTML = "";
-
-  for (const chant of results) {
-    const item = document.createElement("button");
-    item.type = "button";
-    item.className = "search-result-item";
-
-    const selected = isSelectedSomewhere(chant.id);
-    item.innerHTML = `
-      <div class="search-result-title">${escapeHtml(chant.titre || "Sans titre")}</div>
-      <div class="search-result-meta">${selected ? "Déjà sélectionné" : "Ajouter à la section en cours"}</div>
-    `;
-
-    item.addEventListener("click", () => {
-      selectChant(chant, { autoAdvance: false, fromSearch: true });
-      renderSearchOverlay();
-      render();
-    });
-
-    resultsBox.appendChild(item);
-  }
-}
-
-/* ===============================
-   CARNETS
+   FILTRAGE DES CHANTS
 ================================ */
 
 function getFilteredChantsBase() {
   let base = [...state.chants];
 
-  if (state.selectedCarnets && state.selectedCarnets.length) {
+  if (state.selectedCarnets.length > 0) {
     base = base.filter((chant) => {
       const sources = uniqueArray([
         chant?.carnet,
@@ -752,7 +609,6 @@ function getFilteredChantsBase() {
         chant?.metadata?.source
       ].filter(Boolean));
 
-      if (!sources.length) return false;
       return sources.some((src) => state.selectedCarnets.includes(src));
     });
   }
@@ -760,105 +616,42 @@ function getFilteredChantsBase() {
   return base;
 }
 
-function renderCarnets() {
-  const container = byId("carnetsList");
-  if (!container) return;
-
-  const query = normalize(byId("searchCarnet")?.value || "");
-  const items = state.availableCarnets.filter((name) => normalize(name).includes(query));
-
-  container.innerHTML = "";
-
-  if (!items.length) {
-    container.innerHTML = `<div class="carnet-empty">Aucun carnet détecté.</div>`;
-    return;
-  }
-
-  const allWrap = document.createElement("label");
-  allWrap.className = "carnet-item";
-  allWrap.innerHTML = `
-    <input type="checkbox" id="carnetAllCheckbox" ${state.selectedCarnets.length === 0 ? "checked" : ""}>
-    <span>Tous les chants</span>
-  `;
-  container.appendChild(allWrap);
-
-  const allCheckbox = allWrap.querySelector("input");
-  if (allCheckbox) {
-    allCheckbox.addEventListener("change", () => {
-      state.selectedCarnets = [];
-      saveGlobalState();
-      renderCarnets();
-      renderSuggestions();
-      renderSearchOverlay();
-    });
-  }
-
-  for (const name of items) {
-    const label = document.createElement("label");
-    label.className = "carnet-item";
-    label.innerHTML = `
-      <input type="checkbox" value="${escapeHtml(name)}" ${state.selectedCarnets.includes(name) ? "checked" : ""}>
-      <span>${escapeHtml(name)}</span>
-    `;
-
-    const checkbox = label.querySelector("input");
-    if (checkbox) {
-      checkbox.addEventListener("change", () => {
-        if (checkbox.checked) {
-          state.selectedCarnets = uniqueArray([...state.selectedCarnets, name]);
-        } else {
-          state.selectedCarnets = state.selectedCarnets.filter((x) => x !== name);
-        }
-
-        saveGlobalState();
-        renderCarnets();
-        renderSuggestions();
-        renderSearchOverlay();
-      });
-    }
-
-    container.appendChild(label);
-  }
-}
-
-/* ===============================
-   SUGGESTIONS
-================================ */
-
-function getSectionAliases(section) {
-  return FUNCTION_ALIASES[section] || [section];
-}
-
 function matchesFunction(chant, section) {
-  const aliases = getSectionAliases(section).map(normalize);
+  const aliases = (FUNCTION_ALIASES[section] || [section]).map(normalize);
   const functions = Array.isArray(chant?.liturgie?.fonctions) ? chant.liturgie.fonctions : [];
 
-  return functions.some((f) => {
-    const nf = normalize(f);
-    return aliases.some((alias) => nf.includes(alias) || alias.includes(nf));
+  return functions.some((func) => {
+    const n = normalize(func);
+    return aliases.some((alias) => n.includes(alias) || alias.includes(n));
   });
 }
 
 function matchesSeason(chant, seasonId) {
   if (!seasonId) return true;
-  const seasons = Array.isArray(chant?.liturgie?.temps_liturgiques) ? chant.liturgie.temps_liturgiques : [];
-  const nSeason = normalize(seasonId);
 
-  return seasons.some((s) => {
-    const ns = normalize(s);
-    return ns.includes(nSeason) || nSeason.includes(ns);
+  const seasons = Array.isArray(chant?.liturgie?.temps_liturgiques)
+    ? chant.liturgie.temps_liturgiques
+    : [];
+
+  const target = normalize(seasonId);
+
+  return seasons.some((season) => {
+    const n = normalize(season);
+    return n.includes(target) || target.includes(n);
   });
 }
 
 function matchesRite(chant, rite) {
   if (!rite) return true;
+
   const rites = Array.isArray(chant?.liturgie?.rites) ? chant.liturgie.rites : [];
   if (!rites.length) return true;
 
-  const nRite = normalize(rite);
+  const target = normalize(rite);
+
   return rites.some((r) => {
-    const nr = normalize(r);
-    return nr.includes(nRite) || nRite.includes(nr);
+    const n = normalize(r);
+    return n.includes(target) || target.includes(n);
   });
 }
 
@@ -871,19 +664,18 @@ function getQualityScore(chant) {
   return 0;
 }
 
-function isLiked(chantId) {
-  return Boolean(state.likes && state.likes[chantId]);
-}
+function matchesSearch(chant, query) {
+  const q = normalize(query);
+  if (!q) return true;
 
-function isSelectedInSection(chantId, section) {
-  const arr = state.selectedBySection?.[section];
-  return Array.isArray(arr) && arr.includes(chantId);
-}
+  const haystacks = [
+    chant?.titre,
+    chant?.titre_normalise,
+    chant?.texte_normalise?.refrain,
+    chant?.texte_normalise?.texte_complet
+  ].map(normalize);
 
-function isSelectedSomewhere(chantId) {
-  return Object.values(state.selectedBySection || {}).some(
-    (arr) => Array.isArray(arr) && arr.includes(chantId)
-  );
+  return haystacks.some((text) => text.includes(q));
 }
 
 function computeSuggestionScore(chant, section) {
@@ -891,33 +683,353 @@ function computeSuggestionScore(chant, section) {
 
   if (matchesFunction(chant, section)) score += 120;
   if (matchesSeason(chant, state.liturgicalInfo?.season?.id)) score += 60;
-  if (matchesRite(chant, state.rite)) score += 20;
+  if (matchesRite(chant, state.rite)) score += 25;
   if (isLiked(chant.id)) score += 80;
 
   score += getQualityScore(chant);
 
-  if (isSelectedInSection(chant.id, section)) score -= 150;
+  if (isSelectedInSection(chant.id, section)) {
+    score -= 200;
+  }
 
   return score;
 }
 
 function getRankedSuggestions(section) {
-  const base = getFilteredChantsBase()
+  const ranked = getFilteredChantsBase()
     .filter((chant) => chant && chant.id != null)
-    .filter((chant) => matchesRite(chant, state.rite));
-
-  let ranked = base
-    .map((chant) => ({ chant, score: computeSuggestionScore(chant, section) }))
+    .filter((chant) => matchesRite(chant, state.rite))
+    .filter((chant) => matchesSearch(chant, state.currentSearch))
+    .map((chant) => ({
+      chant,
+      score: computeSuggestionScore(chant, section)
+    }))
     .sort((a, b) => b.score - a.score);
 
-  if (state.favoritesOnly) {
-    ranked = ranked.filter((x) => isLiked(x.chant.id));
+  const liked = ranked.filter((item) => isLiked(item.chant.id));
+  const others = ranked.filter((item) => !isLiked(item.chant.id));
+
+  return [...liked, ...others].map((item) => item.chant);
+}
+
+/* ===============================
+   FAVORIS : PANNEAU DÉDIÉ
+================================ */
+
+function ensureFavoritesModal() {
+  if (byId("favoritesModal")) return;
+
+  const modal = document.createElement("div");
+  modal.id = "favoritesModal";
+  modal.hidden = true;
+  modal.style.position = "fixed";
+  modal.style.inset = "0";
+  modal.style.background = "rgba(0,0,0,0.28)";
+  modal.style.display = "flex";
+  modal.style.alignItems = "center";
+  modal.style.justifyContent = "center";
+  modal.style.padding = "24px";
+  modal.style.zIndex = "9999";
+
+  modal.innerHTML = `
+    <div id="favoritesPanel" style="
+      width:min(760px, 100%);
+      max-height:80vh;
+      overflow:auto;
+      background:#ffffff;
+      border-radius:18px;
+      padding:20px;
+      box-sizing:border-box;
+      box-shadow:0 18px 40px rgba(0,0,0,0.18);
+    ">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:16px;">
+        <h2 style="margin:0;font-size:1.2rem;">Favoris</h2>
+        <button id="closeFavoritesModal" type="button" style="
+          border:1px solid #cfc7ba;
+          background:#fff;
+          border-radius:10px;
+          padding:8px 12px;
+          cursor:pointer;
+        ">Fermer</button>
+      </div>
+      <div id="favoritesPanelText" style="margin-bottom:14px;color:#555;"></div>
+      <div id="favoritesList"></div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  const closeButton = byId("closeFavoritesModal");
+  if (closeButton) {
+    closeButton.addEventListener("click", closeFavoritesModal);
   }
 
-  const liked = ranked.filter((x) => isLiked(x.chant.id));
-  const nonLiked = ranked.filter((x) => !isLiked(x.chant.id));
+  modal.addEventListener("click", (event) => {
+    if (event.target === modal) {
+      closeFavoritesModal();
+    }
+  });
+}
 
-  return [...liked, ...nonLiked].map((x) => x.chant);
+function openFavoritesModal() {
+  ensureFavoritesModal();
+  state.ui.favoritesOpen = true;
+  renderFavoritesModal();
+
+  const modal = byId("favoritesModal");
+  if (modal) {
+    modal.hidden = false;
+  }
+}
+
+function closeFavoritesModal() {
+  state.ui.favoritesOpen = false;
+  const modal = byId("favoritesModal");
+  if (modal) {
+    modal.hidden = true;
+  }
+}
+
+function renderFavoritesModal() {
+  const text = byId("favoritesPanelText");
+  const list = byId("favoritesList");
+  if (!text || !list) return;
+
+  const favorites = getFilteredChantsBase()
+    .filter((chant) => chant && chant.id != null && isLiked(chant.id))
+    .sort((a, b) => safeText(a.titre).localeCompare(safeText(b.titre), "fr"));
+
+  const currentSection = getCurrentSection();
+  text.textContent = currentSection
+    ? `Section en cours : ${currentSection}`
+    : "Aucune section en cours.";
+
+  list.innerHTML = "";
+
+  if (!favorites.length) {
+    list.innerHTML = `<div style="color:#555;">Aucun chant favori pour l’instant.</div>`;
+    return;
+  }
+
+  for (const chant of favorites) {
+    const row = document.createElement("div");
+    row.style.display = "flex";
+    row.style.justifyContent = "space-between";
+    row.style.alignItems = "center";
+    row.style.gap = "12px";
+    row.style.padding = "12px 0";
+    row.style.borderBottom = "1px solid #eee";
+
+    const left = document.createElement("div");
+    left.innerHTML = `
+      <div style="font-weight:600;">${escapeHtml(chant.titre || "Sans titre")}</div>
+      <div style="font-size:0.9rem;color:#666;">${escapeHtml(buildChantPreview(chant))}</div>
+    `;
+
+    const right = document.createElement("div");
+    right.style.display = "flex";
+    right.style.gap = "8px";
+    right.style.flexWrap = "wrap";
+
+    const addButton = document.createElement("button");
+    addButton.type = "button";
+    addButton.textContent = "Ajouter à la section";
+    addButton.style.border = "1px solid #cfc7ba";
+    addButton.style.background = "#fff";
+    addButton.style.borderRadius = "10px";
+    addButton.style.padding = "8px 10px";
+    addButton.style.cursor = "pointer";
+    addButton.disabled = !currentSection || isSelectedInSection(chant.id, currentSection);
+    addButton.addEventListener("click", () => {
+      selectChant(chant, { autoAdvance: false });
+      renderFavoritesModal();
+    });
+
+    const unlikeButton = document.createElement("button");
+    unlikeButton.type = "button";
+    unlikeButton.textContent = "Retirer des favoris";
+    unlikeButton.style.border = "1px solid #cfc7ba";
+    unlikeButton.style.background = "#fff";
+    unlikeButton.style.borderRadius = "10px";
+    unlikeButton.style.padding = "8px 10px";
+    unlikeButton.style.cursor = "pointer";
+    unlikeButton.addEventListener("click", () => {
+      toggleLike(chant.id);
+      renderFavoritesModal();
+    });
+
+    right.appendChild(addButton);
+    right.appendChild(unlikeButton);
+
+    row.appendChild(left);
+    row.appendChild(right);
+    list.appendChild(row);
+  }
+}
+
+/* ===============================
+   LIKES
+================================ */
+
+function toggleLike(chantId) {
+  if (chantId == null) return;
+
+  state.likes[chantId] = !state.likes[chantId];
+  saveGlobalState();
+  renderSuggestions();
+  renderSheet();
+
+  if (state.ui.favoritesOpen) {
+    renderFavoritesModal();
+  }
+}
+
+/* ===============================
+   SÉLECTION / DÉSÉLECTION
+================================ */
+
+function selectChant(chant, options = {}) {
+  const { autoAdvance = true } = options;
+  const section = getCurrentSection();
+
+  if (!section || !chant || chant.id == null) return;
+
+  if (!Array.isArray(state.selectedBySection[section])) {
+    state.selectedBySection[section] = [];
+  }
+
+  if (!state.selectedBySection[section].includes(chant.id)) {
+    state.selectedBySection[section].push(chant.id);
+  }
+
+  markCurrentSectionVisited();
+  saveCurrentRiteState();
+  saveGlobalState();
+
+  if (autoAdvance) {
+    const maxIndex = getSectionsForCurrentRite().length - 1;
+    if (state.currentSectionIndex < maxIndex) {
+      state.currentSectionIndex += 1;
+    }
+  }
+
+  render();
+}
+
+function removeChantFromSection(section, chantId) {
+  if (!section || chantId == null) return;
+
+  const list = Array.isArray(state.selectedBySection[section]) ? state.selectedBySection[section] : [];
+  state.selectedBySection[section] = list.filter((id) => id !== chantId);
+
+  saveCurrentRiteState();
+  saveGlobalState();
+  render();
+}
+
+function moveSelectedChant(section, chantId, direction) {
+  const list = Array.isArray(state.selectedBySection[section]) ? [...state.selectedBySection[section]] : [];
+  const index = list.indexOf(chantId);
+  if (index === -1) return;
+
+  const targetIndex = index + direction;
+  if (targetIndex < 0 || targetIndex >= list.length) return;
+
+  [list[index], list[targetIndex]] = [list[targetIndex], list[index]];
+  state.selectedBySection[section] = list;
+
+  saveCurrentRiteState();
+  renderSheet();
+}
+
+/* ===============================
+   RENDU GLOBAL
+================================ */
+
+function render() {
+  renderSectionTitle();
+  renderSummary();
+  renderSectionsSummary();
+  renderSuggestions();
+  renderSheet();
+  renderNavButtons();
+  renderFavoritesButton();
+  renderRiteButtons();
+}
+
+/* ===============================
+   RENDUS
+================================ */
+
+function renderSectionTitle() {
+  const titleEl = byId("sectionTitle");
+  const subtitleEl = byId("sectionSubtitle");
+
+  if (titleEl) {
+    titleEl.textContent = getCurrentSection() || "";
+  }
+
+  if (subtitleEl) {
+    subtitleEl.textContent = state.liturgicalInfo?.display?.title || "";
+  }
+}
+
+function renderSummary() {
+  const summary = byId("summary");
+  if (!summary) return;
+
+  const riteLabel =
+    state.rite === "ordinaire"
+      ? "Rite ordinaire"
+      : state.rite === "extraordinaire"
+      ? "Rite extraordinaire"
+      : "Non choisi";
+
+  summary.innerHTML = `
+    <div class="summary-title">Résumé</div>
+    <div class="summary-line"><strong>Rite :</strong> ${escapeHtml(riteLabel)}</div>
+    <div class="summary-line"><strong>Date :</strong> ${escapeHtml(formatDateFr(state.date))}</div>
+    <div class="summary-line"><strong>Célébration :</strong> ${escapeHtml(state.liturgicalInfo?.display?.title || "—")}</div>
+    <div class="summary-line"><strong>Détail :</strong> ${escapeHtml(state.liturgicalInfo?.display?.subtitle || "—")}</div>
+  `;
+}
+
+function renderSectionsSummary() {
+  const container = byId("sections");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  const sections = getSectionsForCurrentRite();
+  const filledSections = sections.filter((section) => hasSelectionsInSection(section));
+
+  if (!filledSections.length) {
+    const empty = document.createElement("div");
+    empty.className = "section-summary-empty";
+    empty.textContent = "Le sommaire apparaîtra au fur et à mesure des sections remplies.";
+    container.appendChild(empty);
+    return;
+  }
+
+  for (const section of filledSections) {
+    const count = state.selectedBySection[section].length;
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "section-pill";
+    if (section === getCurrentSection()) {
+      button.classList.add("active");
+    }
+
+    button.innerHTML = `
+      <span class="section-pill-label">${escapeHtml(section)}</span>
+      <span class="section-pill-count">${count}</span>
+    `;
+
+    const index = sections.indexOf(section);
+    button.addEventListener("click", () => goToSection(index));
+
+    container.appendChild(button);
+  }
 }
 
 function renderSuggestions() {
@@ -958,28 +1070,28 @@ function createChantCard(chant, section) {
   const actions = document.createElement("div");
   actions.className = "chant-actions";
 
-  const likeBtn = document.createElement("button");
-  likeBtn.type = "button";
-  likeBtn.className = "chant-like";
-  likeBtn.setAttribute("aria-label", "Mettre en favori");
-  likeBtn.textContent = isLiked(chant.id) ? "♥" : "♡";
-  likeBtn.addEventListener("click", (event) => {
+  const likeButton = document.createElement("button");
+  likeButton.type = "button";
+  likeButton.className = "chant-like";
+  likeButton.textContent = isLiked(chant.id) ? "♥" : "♡";
+  likeButton.title = "Ajouter aux favoris";
+  likeButton.addEventListener("click", (event) => {
     event.stopPropagation();
     toggleLike(chant.id);
   });
 
-  const selectBtn = document.createElement("button");
-  selectBtn.type = "button";
-  selectBtn.className = "chant-select";
-  selectBtn.textContent = isSelectedInSection(chant.id, section) ? "Ajouté" : "Sélectionner";
-  selectBtn.disabled = isSelectedInSection(chant.id, section);
-  selectBtn.addEventListener("click", (event) => {
+  const selectButton = document.createElement("button");
+  selectButton.type = "button";
+  selectButton.className = "chant-select";
+  selectButton.textContent = isSelectedInSection(chant.id, section) ? "Ajouté" : "Sélectionner";
+  selectButton.disabled = isSelectedInSection(chant.id, section);
+  selectButton.addEventListener("click", (event) => {
     event.stopPropagation();
-    selectChant(chant, { autoAdvance: true, fromSearch: false });
+    selectChant(chant, { autoAdvance: true });
   });
 
-  actions.appendChild(likeBtn);
-  actions.appendChild(selectBtn);
+  actions.appendChild(likeButton);
+  actions.appendChild(selectButton);
 
   header.appendChild(title);
   header.appendChild(actions);
@@ -993,22 +1105,9 @@ function createChantCard(chant, section) {
     card.appendChild(previewEl);
   }
 
-  const details = document.createElement("div");
-  details.className = "chant-details";
-  details.hidden = true;
-
-  const textLines = [];
-  const refrain = safeText(chant?.texte_normalise?.refrain).trim();
-  const couplets = Array.isArray(chant?.texte_normalise?.couplets) ? chant.texte_normalise.couplets : [];
-  if (refrain) {
-    textLines.push(`Refrain : ${refrain}`);
-  }
-  if (couplets.length) {
-    textLines.push(...couplets.map((c, index) => `Couplet ${index + 1} : ${safeText(c)}`));
-  }
-
-  if (textLines.length) {
-    details.innerHTML = textLines.map((line) => `<div>${escapeHtml(line)}</div>`).join("");
+  const details = buildDetailsBlock(chant);
+  if (details) {
+    details.hidden = true;
     card.appendChild(details);
 
     card.addEventListener("click", () => {
@@ -1025,223 +1124,34 @@ function buildChantPreview(chant) {
     return refrain.length > 120 ? `${refrain.slice(0, 117)}...` : refrain;
   }
 
-  const full = safeText(chant?.texte_normalise?.texte_complet).trim();
-  if (full) {
-    return full.length > 120 ? `${full.slice(0, 117)}...` : full;
+  const text = safeText(chant?.texte_normalise?.texte_complet).trim();
+  if (text) {
+    return text.length > 120 ? `${text.slice(0, 117)}...` : text;
   }
 
   return "";
 }
 
-/* ===============================
-   LIKES
-================================ */
+function buildDetailsBlock(chant) {
+  const refrain = safeText(chant?.texte_normalise?.refrain).trim();
+  const couplets = Array.isArray(chant?.texte_normalise?.couplets) ? chant.texte_normalise.couplets : [];
 
-function toggleLike(chantId) {
-  if (chantId == null) return;
-
-  state.likes[chantId] = !state.likes[chantId];
-  saveGlobalState();
-  renderSuggestions();
-  renderSheet();
-  renderFavoritesButton();
-  renderSearchOverlay();
-}
-
-function renderFavoritesButton() {
-  const btn = byId("favoritesButton");
-  if (!btn) return;
-  btn.textContent = state.favoritesOnly ? "Favoris activés" : "Favoris";
-  btn.setAttribute("aria-pressed", state.favoritesOnly ? "true" : "false");
-}
-
-/* ===============================
-   SELECTION / DESELECTION
-================================ */
-
-function selectChant(chant, options = {}) {
-  const { autoAdvance = true, fromSearch = false } = options;
-
-  const section = getCurrentSection();
-  if (!section || !chant || chant.id == null) return;
-
-  if (!Array.isArray(state.selectedBySection[section])) {
-    state.selectedBySection[section] = [];
+  const lines = [];
+  if (refrain) {
+    lines.push(`Refrain : ${refrain}`);
   }
 
-  if (!state.selectedBySection[section].includes(chant.id)) {
-    state.selectedBySection[section].push(chant.id);
-  }
-
-  markCurrentSectionVisited();
-  saveCurrentRiteState();
-  saveGlobalState();
-
-  renderSheet();
-  renderSectionsList();
-  renderSuggestions();
-
-  if (fromSearch) {
-    openSearchPanel();
-  }
-
-  if (autoAdvance) {
-    const maxIndex = getSectionsForCurrentRite().length - 1;
-    if (state.currentSectionIndex < maxIndex) {
-      state.currentSectionIndex += 1;
-      markCurrentSectionVisited();
-      saveCurrentRiteState();
-      render();
-    } else {
-      render();
-    }
-  } else {
-    render();
-  }
-}
-
-function removeChantFromSection(section, chantId) {
-  if (!section || chantId == null) return;
-
-  const arr = Array.isArray(state.selectedBySection[section]) ? state.selectedBySection[section] : [];
-  state.selectedBySection[section] = arr.filter((id) => id !== chantId);
-
-  saveCurrentRiteState();
-  saveGlobalState();
-  render();
-}
-
-function moveSelectedChant(section, chantId, direction) {
-  const arr = Array.isArray(state.selectedBySection[section]) ? [...state.selectedBySection[section]] : [];
-  const index = arr.indexOf(chantId);
-  if (index === -1) return;
-
-  const targetIndex = index + direction;
-  if (targetIndex < 0 || targetIndex >= arr.length) return;
-
-  [arr[index], arr[targetIndex]] = [arr[targetIndex], arr[index]];
-  state.selectedBySection[section] = arr;
-
-  saveCurrentRiteState();
-  renderSheet();
-}
-
-/* ===============================
-   RENDU GLOBAL
-================================ */
-
-function render() {
-  renderSectionTitle();
-  renderSummary();
-  renderSectionsList();
-  renderSuggestions();
-  renderSheet();
-  renderFavoritesButton();
-  renderCarnets();
-  renderSearchOverlay();
-  renderNavButtons();
-  renderRiteButtons();
-}
-
-/* ===============================
-   RENDU - TITRE / SOUS-TITRE
-================================ */
-
-function renderSectionTitle() {
-  const titleEl = byId("sectionTitle");
-  const subtitleEl = byId("sectionSubtitle");
-
-  if (titleEl) {
-    titleEl.textContent = getCurrentSection() || "";
-  }
-
-  if (subtitleEl) {
-    subtitleEl.textContent = state.liturgicalInfo?.display?.title || "";
-  }
-}
-
-function renderRiteButtons() {
-  qsa("[data-rite]").forEach((btn) => {
-    const rite = btn.dataset.rite;
-    const active = rite === state.rite;
-    btn.setAttribute("aria-pressed", active ? "true" : "false");
-    btn.classList.toggle("active", active);
+  couplets.forEach((couplet, index) => {
+    lines.push(`Couplet ${index + 1} : ${safeText(couplet)}`);
   });
+
+  if (!lines.length) return null;
+
+  const details = document.createElement("div");
+  details.className = "chant-details";
+  details.innerHTML = lines.map((line) => `<div>${escapeHtml(line)}</div>`).join("");
+  return details;
 }
-
-/* ===============================
-   RENDU - COLONNE 1
-================================ */
-
-function renderSummary() {
-  const summary = byId("summary");
-  if (!summary) return;
-
-  const riteLabel =
-    state.rite === "ordinaire"
-      ? "Rite ordinaire"
-      : state.rite === "extraordinaire"
-      ? "Rite extraordinaire"
-      : "Non choisi";
-
-  const litTitle = state.liturgicalInfo?.display?.title || "";
-  const litSubtitle = state.liturgicalInfo?.display?.subtitle || "";
-
-  summary.innerHTML = `
-    <div class="summary-title">Résumé</div>
-    <div class="summary-line"><strong>Rite :</strong> ${escapeHtml(riteLabel)}</div>
-    <div class="summary-line"><strong>Date :</strong> ${escapeHtml(formatDateFr(state.date))}</div>
-    <div class="summary-line"><strong>Célébration :</strong> ${escapeHtml(litTitle || "—")}</div>
-    <div class="summary-line"><strong>Détail :</strong> ${escapeHtml(litSubtitle || "—")}</div>
-  `;
-}
-
-function renderSectionsList() {
-  const container = byId("sections");
-  if (!container) return;
-
-  const sections = getSectionsForCurrentRite();
-  container.innerHTML = "";
-
-  for (let i = 0; i < sections.length; i += 1) {
-    const section = sections[i];
-    const selectedCount = Array.isArray(state.selectedBySection[section]) ? state.selectedBySection[section].length : 0;
-    const visited = (state.visitedSections || []).includes(section);
-    const isActive = i === state.currentSectionIndex;
-
-    const item = document.createElement("button");
-    item.type = "button";
-    item.className = "section-pill";
-    if (isActive) item.classList.add("active");
-    if (visited) item.classList.add("visited");
-
-    item.innerHTML = `
-      <span class="section-pill-label">${escapeHtml(section)}</span>
-      <span class="section-pill-count">${selectedCount > 0 ? selectedCount : ""}</span>
-    `;
-
-    item.addEventListener("click", () => goToSection(i));
-    container.appendChild(item);
-  }
-}
-
-function renderNavButtons() {
-  const prevBtn = byId("prev");
-  const nextBtn = byId("next");
-  const sections = getSectionsForCurrentRite();
-
-  if (prevBtn) {
-    prevBtn.disabled = !state.rite || state.currentSectionIndex <= 0;
-  }
-
-  if (nextBtn) {
-    nextBtn.disabled = !state.rite || state.currentSectionIndex >= sections.length - 1;
-  }
-}
-
-/* ===============================
-   RENDU - FEUILLE A4
-================================ */
 
 function renderSheet() {
   const titleEl = byId("sheetTitle");
@@ -1271,25 +1181,22 @@ function renderSheet() {
     const header = document.createElement("div");
     header.className = "sheet-section-header";
 
-    const title = document.createElement("h3");
-    title.textContent = section;
+    const h3 = document.createElement("h3");
+    h3.textContent = section;
+    header.appendChild(h3);
 
-    header.appendChild(title);
     block.appendChild(header);
 
-    for (let i = 0; i < ids.length; i += 1) {
-      const id = ids[i];
+    ids.forEach((id, index) => {
       const chant = state.chantsById.get(id);
-      if (!chant) continue;
+      if (!chant) return;
 
       const item = document.createElement("div");
       item.className = "sheet-chant-item";
 
       const textZone = document.createElement("div");
       textZone.className = "sheet-chant-text";
-      textZone.innerHTML = `
-        <div class="sheet-chant-title">${escapeHtml(chant.titre || "Sans titre")}</div>
-      `;
+      textZone.innerHTML = `<div class="sheet-chant-title">${escapeHtml(chant.titre || "Sans titre")}</div>`;
 
       const actions = document.createElement("div");
       actions.className = "sheet-chant-actions";
@@ -1297,13 +1204,13 @@ function renderSheet() {
       const up = document.createElement("button");
       up.type = "button";
       up.textContent = "↑";
-      up.disabled = i === 0;
+      up.disabled = index === 0;
       up.addEventListener("click", () => moveSelectedChant(section, id, -1));
 
       const down = document.createElement("button");
       down.type = "button";
       down.textContent = "↓";
-      down.disabled = i === ids.length - 1;
+      down.disabled = index === ids.length - 1;
       down.addEventListener("click", () => moveSelectedChant(section, id, +1));
 
       const remove = document.createElement("button");
@@ -1318,7 +1225,7 @@ function renderSheet() {
       item.appendChild(textZone);
       item.appendChild(actions);
       block.appendChild(item);
-    }
+    });
 
     content.appendChild(block);
   }
@@ -1328,22 +1235,43 @@ function renderSheet() {
   }
 }
 
-/* ===============================
-   SIGNALEMENT D'ERREUR
-================================ */
+function renderNavButtons() {
+  const prev = byId("prev");
+  const next = byId("next");
+  const sections = getSectionsForCurrentRite();
 
-function openReportPanel() {
-  const panel = byId("reportErrorPanel");
-  if (!panel) return;
-  panel.hidden = false;
+  if (prev) {
+    prev.disabled = !state.rite || state.currentSectionIndex <= 0;
+  }
+
+  if (next) {
+    next.disabled = !state.rite || state.currentSectionIndex >= sections.length - 1;
+  }
+}
+
+function renderFavoritesButton() {
+  const button = byId("favoritesButton");
+  if (!button) return;
+
+  button.textContent = "Favoris";
+  button.removeAttribute("aria-pressed");
+  button.classList.remove("active");
+}
+
+function renderRiteButtons() {
+  qsa("[data-rite]").forEach((button) => {
+    const active = button.dataset.rite === state.rite;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  });
 }
 
 /* ===============================
-   SECURITE GLOBALE
+   SÉCURITÉ GLOBALE
 ================================ */
 
 window.addEventListener("error", (event) => {
-  console.error("Erreur JavaScript non interceptée :", event.error || event.message);
+  console.error("Erreur JavaScript :", event.error || event.message);
 });
 
 window.addEventListener("unhandledrejection", (event) => {
