@@ -1,10 +1,10 @@
 /* =========================================================
    FEUILLE DE MESSE - APP.JS
-   Version robuste et conforme aux dernières décisions
+   Version adaptée au nouvel index.html
    ========================================================= */
 
-const STORAGE_KEY_GLOBAL = "fdm_global_v4";
-const STORAGE_KEY_RITE_PREFIX = "fdm_rite_v4_";
+const STORAGE_KEY_GLOBAL = "fdm_global_v5";
+const STORAGE_KEY_RITE_PREFIX = "fdm_rite_v5_";
 
 const SECTIONS = {
   ordinaire: [
@@ -69,6 +69,14 @@ const state = {
 
   selectedCarnets: [],
   availableCarnets: [],
+
+  suggestionOffsets: {},
+  hiddenCoupletsBySection: {},
+
+  drag: {
+    chantId: null,
+    fromSection: null
+  },
 
   ui: {
     favoritesOpen: false
@@ -163,6 +171,48 @@ function hasSelectionsInSection(section) {
   return Array.isArray(list) && list.length > 0;
 }
 
+function getChantById(id) {
+  return state.chantsById.get(id) || null;
+}
+
+function ensureSectionState(section) {
+  if (!section) return;
+  if (!Array.isArray(state.selectedBySection[section])) {
+    state.selectedBySection[section] = [];
+  }
+  if (typeof state.suggestionOffsets[section] !== "number") {
+    state.suggestionOffsets[section] = 0;
+  }
+  if (!state.hiddenCoupletsBySection[section] || typeof state.hiddenCoupletsBySection[section] !== "object") {
+    state.hiddenCoupletsBySection[section] = {};
+  }
+}
+
+function getHiddenCouplets(section, chantId) {
+  ensureSectionState(section);
+  const raw = state.hiddenCoupletsBySection[section]?.[chantId];
+  return Array.isArray(raw) ? raw : [];
+}
+
+function setHiddenCouplets(section, chantId, indexes) {
+  ensureSectionState(section);
+  state.hiddenCoupletsBySection[section][chantId] = uniqueArray(indexes).sort((a, b) => a - b);
+}
+
+function getRefrainText(chant) {
+  return safeText(chant?.texte_normalise?.refrain).trim();
+}
+
+function getCoupletsArray(chant) {
+  return Array.isArray(chant?.texte_normalise?.couplets)
+    ? chant.texte_normalise.couplets.map((c) => safeText(c).trim()).filter(Boolean)
+    : [];
+}
+
+function getFullText(chant) {
+  return safeText(chant?.texte_normalise?.texte_complet).trim();
+}
+
 /* ===============================
    STORAGE
 ================================ */
@@ -213,7 +263,9 @@ function saveRiteState(rite) {
     date: state.date,
     currentSectionIndex: state.currentSectionIndex,
     selectedBySection: state.selectedBySection,
-    visitedSections: state.visitedSections
+    visitedSections: state.visitedSections,
+    suggestionOffsets: state.suggestionOffsets,
+    hiddenCoupletsBySection: state.hiddenCoupletsBySection
   });
 }
 
@@ -281,10 +333,6 @@ function extractAvailableCarnets(chants) {
    CALCUL LITURGIQUE
 ================================ */
 
-/* ===============================
-   CALCUL LITURGIQUE
-================================ */
-
 function updateLiturgicalInfo() {
   if (!state.rite) {
     state.liturgicalInfo = null;
@@ -318,10 +366,6 @@ function updateLiturgicalInfo() {
    INITIALISATION
 ================================ */
 
-/* ===============================
-   INITIALISATION
-================================ */
-
 document.addEventListener("DOMContentLoaded", init);
 
 async function init() {
@@ -344,7 +388,12 @@ async function init() {
         state.currentSectionIndex = clamp(saved.currentSectionIndex || 0, 0, getSectionsForCurrentRite().length - 1);
         state.selectedBySection = saved.selectedBySection || {};
         state.visitedSections = saved.visitedSections || [];
+        state.suggestionOffsets = saved.suggestionOffsets || {};
+        state.hiddenCoupletsBySection = saved.hiddenCoupletsBySection || {};
+      } else {
+        resetRiteState(state.rite);
       }
+
       syncDateInput();
       updateLiturgicalInfo();
       render();
@@ -404,8 +453,18 @@ function bindEvents() {
   if (chantSearch) {
     chantSearch.addEventListener("input", (event) => {
       state.currentSearch = event.target.value || "";
+      resetSuggestionOffset(getCurrentSection());
       renderSuggestions();
     });
+  }
+
+  const refreshButton =
+    byId("refreshSuggestions") ||
+    byId("refreshButton") ||
+    byId("refreshChants") ||
+    byId("refresh");
+  if (refreshButton) {
+    refreshButton.addEventListener("click", refreshSuggestions);
   }
 
   const downloadButton = byId("download");
@@ -524,15 +583,25 @@ function restoreRiteState(rite) {
   state.currentSectionIndex = clamp(saved?.currentSectionIndex || 0, 0, SECTIONS[rite].length - 1);
   state.selectedBySection = saved?.selectedBySection || {};
   state.visitedSections = saved?.visitedSections || [];
+  state.suggestionOffsets = saved?.suggestionOffsets || {};
+  state.hiddenCoupletsBySection = saved?.hiddenCoupletsBySection || {};
+
+  for (const section of SECTIONS[rite]) {
+    ensureSectionState(section);
+  }
 }
 
 function resetRiteState(rite) {
   state.currentSectionIndex = 0;
   state.selectedBySection = {};
   state.visitedSections = [];
+  state.suggestionOffsets = {};
+  state.hiddenCoupletsBySection = {};
 
   for (const section of SECTIONS[rite]) {
     state.selectedBySection[section] = [];
+    state.suggestionOffsets[section] = 0;
+    state.hiddenCoupletsBySection[section] = {};
   }
 
   state.date = state.date || getNextSundayISO();
@@ -700,10 +769,6 @@ function computeSuggestionScore(chant, section) {
 
   score += getQualityScore(chant);
 
-  if (isSelectedInSection(chant.id, section)) {
-    score -= 200;
-  }
-
   return score;
 }
 
@@ -716,12 +781,82 @@ function getRankedSuggestions(section) {
       chant,
       score: computeSuggestionScore(chant, section)
     }))
-    .sort((a, b) => b.score - a.score);
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return safeText(a.chant?.titre).localeCompare(safeText(b.chant?.titre), "fr");
+    });
 
   const liked = ranked.filter((item) => isLiked(item.chant.id));
   const others = ranked.filter((item) => !isLiked(item.chant.id));
 
   return [...liked, ...others].map((item) => item.chant);
+}
+
+function resetSuggestionOffset(section) {
+  if (!section) return;
+  state.suggestionOffsets[section] = 0;
+}
+
+function refreshSuggestions() {
+  const section = getCurrentSection();
+  if (!section) return;
+
+  ensureSectionState(section);
+
+  const ranked = getRankedSuggestions(section);
+  const selectedIds = state.selectedBySection[section] || [];
+  const selectedSet = new Set(selectedIds);
+  const unselected = ranked.filter((chant) => !selectedSet.has(chant.id));
+
+  if (!unselected.length) {
+    renderSuggestions();
+    return;
+  }
+
+  const currentOffset = Number(state.suggestionOffsets[section]) || 0;
+  state.suggestionOffsets[section] = (currentOffset + 1) % unselected.length;
+
+  saveCurrentRiteState();
+  renderSuggestions();
+}
+
+function getVisibleSuggestions(section) {
+  ensureSectionState(section);
+
+  const ranked = getRankedSuggestions(section);
+  const selectedIds = state.selectedBySection[section] || [];
+  const selectedSet = new Set(selectedIds);
+
+  const selectedVisible = [];
+  for (const chant of ranked) {
+    if (selectedSet.has(chant.id)) {
+      selectedVisible.push(chant);
+    }
+  }
+
+  const unselected = ranked.filter((chant) => !selectedSet.has(chant.id));
+
+  const maxVisible = 3;
+  const needed = Math.max(0, maxVisible - selectedVisible.length);
+
+  if (needed === 0) {
+    return selectedVisible.slice(0, maxVisible);
+  }
+
+  if (!unselected.length) {
+    return selectedVisible.slice(0, maxVisible);
+  }
+
+  let offset = Number(state.suggestionOffsets[section]) || 0;
+  if (offset >= unselected.length) {
+    offset = 0;
+    state.suggestionOffsets[section] = 0;
+  }
+
+  const rotated = unselected.slice(offset).concat(unselected.slice(0, offset));
+  const fill = rotated.slice(0, needed);
+
+  return [...selectedVisible, ...fill].slice(0, maxVisible);
 }
 
 /* ===============================
@@ -904,15 +1039,14 @@ function selectChant(chant, options = {}) {
 
   if (!section || !chant || chant.id == null) return;
 
-  if (!Array.isArray(state.selectedBySection[section])) {
-    state.selectedBySection[section] = [];
-  }
+  ensureSectionState(section);
 
   if (!state.selectedBySection[section].includes(chant.id)) {
     state.selectedBySection[section].push(chant.id);
   }
 
   markCurrentSectionVisited();
+
   saveCurrentRiteState();
   saveGlobalState();
 
@@ -932,21 +1066,61 @@ function removeChantFromSection(section, chantId) {
   const list = Array.isArray(state.selectedBySection[section]) ? state.selectedBySection[section] : [];
   state.selectedBySection[section] = list.filter((id) => id !== chantId);
 
+  if (state.hiddenCoupletsBySection[section]) {
+    delete state.hiddenCoupletsBySection[section][chantId];
+  }
+
   saveCurrentRiteState();
   saveGlobalState();
   render();
 }
 
-function moveSelectedChant(section, chantId, direction) {
-  const list = Array.isArray(state.selectedBySection[section]) ? [...state.selectedBySection[section]] : [];
-  const index = list.indexOf(chantId);
-  if (index === -1) return;
+function moveChantToSection(chantId, fromSection, toSection) {
+  if (!chantId || !fromSection || !toSection) return;
+  if (fromSection === toSection) return;
 
-  const targetIndex = index + direction;
-  if (targetIndex < 0 || targetIndex >= list.length) return;
+  ensureSectionState(fromSection);
+  ensureSectionState(toSection);
 
-  [list[index], list[targetIndex]] = [list[targetIndex], list[index]];
-  state.selectedBySection[section] = list;
+  const sourceList = Array.isArray(state.selectedBySection[fromSection]) ? [...state.selectedBySection[fromSection]] : [];
+  if (!sourceList.includes(chantId)) return;
+
+  state.selectedBySection[fromSection] = sourceList.filter((id) => id !== chantId);
+
+  if (!state.selectedBySection[toSection].includes(chantId)) {
+    state.selectedBySection[toSection].push(chantId);
+  }
+
+  const hidden = getHiddenCouplets(fromSection, chantId);
+  if (hidden.length) {
+    setHiddenCouplets(toSection, chantId, hidden);
+  }
+  if (state.hiddenCoupletsBySection[fromSection]) {
+    delete state.hiddenCoupletsBySection[fromSection][chantId];
+  }
+
+  saveCurrentRiteState();
+  saveGlobalState();
+  render();
+}
+
+/* ===============================
+   COUPLETS
+================================ */
+
+function toggleCoupletInSheet(section, chantId, coupletIndex) {
+  const hidden = getHiddenCouplets(section, chantId);
+  const isHidden = hidden.includes(coupletIndex);
+
+  if (isHidden) {
+    setHiddenCouplets(
+      section,
+      chantId,
+      hidden.filter((i) => i !== coupletIndex)
+    );
+  } else {
+    setHiddenCouplets(section, chantId, [...hidden, coupletIndex]);
+  }
 
   saveCurrentRiteState();
   renderSheet();
@@ -1053,7 +1227,7 @@ function renderSuggestions() {
   const section = getCurrentSection();
   if (!section) return;
 
-  const suggestions = getRankedSuggestions(section).slice(0, 3);
+  const suggestions = getVisibleSuggestions(section);
   state.currentSuggestions = suggestions;
 
   if (!suggestions.length) {
@@ -1069,16 +1243,33 @@ function renderSuggestions() {
 function createChantCard(chant, section) {
   const card = document.createElement("div");
   card.className = "chant";
+  card.tabIndex = 0;
 
-  const header = document.createElement("div");
-  header.className = "chant-header";
+  if (isSelectedInSection(chant.id, section)) {
+    card.classList.add("selected");
+    card.setAttribute("aria-pressed", "true");
+  } else {
+    card.setAttribute("aria-pressed", "false");
+  }
+
+  card.addEventListener("click", () => {
+    if (!isSelectedInSection(chant.id, section)) {
+      selectChant(chant, { autoAdvance: true });
+    }
+  });
+
+  card.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      if (!isSelectedInSection(chant.id, section)) {
+        selectChant(chant, { autoAdvance: true });
+      }
+    }
+  });
 
   const title = document.createElement("div");
-  title.className = "chant-title";
+  title.className = "chant-title chant-title--single-line";
   title.textContent = chant?.titre || "Sans titre";
-
-  const actions = document.createElement("div");
-  actions.className = "chant-actions";
 
   const likeButton = document.createElement("button");
   likeButton.type = "button";
@@ -1090,77 +1281,24 @@ function createChantCard(chant, section) {
     toggleLike(chant.id);
   });
 
-  const selectButton = document.createElement("button");
-  selectButton.type = "button";
-  selectButton.className = "chant-select";
-  selectButton.textContent = isSelectedInSection(chant.id, section) ? "Ajouté" : "Sélectionner";
-  selectButton.disabled = isSelectedInSection(chant.id, section);
-  selectButton.addEventListener("click", (event) => {
-    event.stopPropagation();
-    selectChant(chant, { autoAdvance: true });
-  });
-
-  actions.appendChild(likeButton);
-  actions.appendChild(selectButton);
-
-  header.appendChild(title);
-  header.appendChild(actions);
-  card.appendChild(header);
-
-  const preview = buildChantPreview(chant);
-  if (preview) {
-    const previewEl = document.createElement("div");
-    previewEl.className = "chant-preview";
-    previewEl.textContent = preview;
-    card.appendChild(previewEl);
-  }
-
-  const details = buildDetailsBlock(chant);
-  if (details) {
-    details.hidden = true;
-    card.appendChild(details);
-
-    card.addEventListener("click", () => {
-      details.hidden = !details.hidden;
-    });
-  }
+  card.appendChild(title);
+  card.appendChild(likeButton);
 
   return card;
 }
 
 function buildChantPreview(chant) {
-  const refrain = safeText(chant?.texte_normalise?.refrain).trim();
+  const refrain = getRefrainText(chant);
   if (refrain) {
     return refrain.length > 120 ? `${refrain.slice(0, 117)}...` : refrain;
   }
 
-  const text = safeText(chant?.texte_normalise?.texte_complet).trim();
+  const text = getFullText(chant);
   if (text) {
     return text.length > 120 ? `${text.slice(0, 117)}...` : text;
   }
 
   return "";
-}
-
-function buildDetailsBlock(chant) {
-  const refrain = safeText(chant?.texte_normalise?.refrain).trim();
-  const couplets = Array.isArray(chant?.texte_normalise?.couplets) ? chant.texte_normalise.couplets : [];
-
-  const lines = [];
-  if (refrain) {
-    lines.push(`Refrain : ${refrain}`);
-  }
-
-  couplets.forEach((couplet, index) => {
-    lines.push(`Couplet ${index + 1} : ${safeText(couplet)}`);
-  });
-
-  if (!lines.length) return null;
-
-  const details = document.createElement("div");
-  details.className = "chant-details";
-  details.innerHTML = lines.map((line) => `<div>${escapeHtml(line)}</div>`).join("");
-  return details;
 }
 
 function renderSheet() {
@@ -1182,11 +1320,34 @@ function renderSheet() {
   const sections = getSectionsForCurrentRite();
 
   for (const section of sections) {
+    ensureSectionState(section);
+
     const ids = Array.isArray(state.selectedBySection[section]) ? state.selectedBySection[section] : [];
-    if (!ids.length) continue;
 
     const block = document.createElement("div");
     block.className = "sheet-section";
+    block.dataset.section = section;
+
+    block.addEventListener("dragover", (event) => {
+      event.preventDefault();
+      block.classList.add("drop-target");
+    });
+
+    block.addEventListener("dragleave", () => {
+      block.classList.remove("drop-target");
+    });
+
+    block.addEventListener("drop", (event) => {
+      event.preventDefault();
+      block.classList.remove("drop-target");
+
+      const chantId = event.dataTransfer.getData("text/plain") || state.drag.chantId;
+      const fromSection = event.dataTransfer.getData("application/x-from-section") || state.drag.fromSection;
+
+      if (chantId && fromSection && fromSection !== section) {
+        moveChantToSection(chantId, fromSection, section);
+      }
+    });
 
     const header = document.createElement("div");
     header.className = "sheet-section-header";
@@ -1197,50 +1358,121 @@ function renderSheet() {
 
     block.appendChild(header);
 
-    ids.forEach((id, index) => {
-      const chant = state.chantsById.get(id);
-      if (!chant) return;
+    if (!ids.length) {
+      const emptyDrop = document.createElement("div");
+      emptyDrop.className = "sheet-dropzone-empty";
+      emptyDrop.textContent = "Déposer un chant ici";
+      block.appendChild(emptyDrop);
+    }
+
+    for (const id of ids) {
+      const chant = getChantById(id);
+      if (!chant) continue;
 
       const item = document.createElement("div");
       item.className = "sheet-chant-item";
+      item.draggable = true;
+      item.dataset.section = section;
+      item.dataset.chantId = String(id);
 
-      const textZone = document.createElement("div");
-      textZone.className = "sheet-chant-text";
-      textZone.innerHTML = `<div class="sheet-chant-title">${escapeHtml(chant.titre || "Sans titre")}</div>`;
+      item.addEventListener("dragstart", (event) => {
+        state.drag.chantId = String(id);
+        state.drag.fromSection = section;
+        event.dataTransfer.setData("text/plain", String(id));
+        event.dataTransfer.setData("application/x-from-section", section);
+        event.dataTransfer.effectAllowed = "move";
+        item.classList.add("dragging");
+      });
+
+      item.addEventListener("dragend", () => {
+        item.classList.remove("dragging");
+        state.drag.chantId = null;
+        state.drag.fromSection = null;
+        qsa(".drop-target").forEach((el) => el.classList.remove("drop-target"));
+      });
+
+      const topRow = document.createElement("div");
+      topRow.className = "sheet-chant-top";
+
+      const titleZone = document.createElement("div");
+      titleZone.className = "sheet-chant-title";
+      titleZone.textContent = chant.titre || "Sans titre";
 
       const actions = document.createElement("div");
       actions.className = "sheet-chant-actions";
 
-      const up = document.createElement("button");
-      up.type = "button";
-      up.textContent = "↑";
-      up.disabled = index === 0;
-      up.addEventListener("click", () => moveSelectedChant(section, id, -1));
-
-      const down = document.createElement("button");
-      down.type = "button";
-      down.textContent = "↓";
-      down.disabled = index === ids.length - 1;
-      down.addEventListener("click", () => moveSelectedChant(section, id, +1));
-
       const remove = document.createElement("button");
       remove.type = "button";
+      remove.className = "sheet-remove-button";
       remove.textContent = "Supprimer";
       remove.addEventListener("click", () => removeChantFromSection(section, id));
 
-      actions.appendChild(up);
-      actions.appendChild(down);
       actions.appendChild(remove);
+      topRow.appendChild(titleZone);
+      topRow.appendChild(actions);
 
-      item.appendChild(textZone);
-      item.appendChild(actions);
+      item.appendChild(topRow);
+
+      const refrain = getRefrainText(chant);
+      if (refrain) {
+        const refrainEl = document.createElement("div");
+        refrainEl.className = "sheet-chant-refrain";
+        refrainEl.innerHTML = `<strong>Refrain</strong><br>${escapeHtml(refrain).replace(/\n/g, "<br>")}`;
+        item.appendChild(refrainEl);
+      }
+
+      const couplets = getCoupletsArray(chant);
+      const hiddenCouplets = new Set(getHiddenCouplets(section, id));
+
+      if (couplets.length) {
+        const coupletsWrap = document.createElement("div");
+        coupletsWrap.className = "sheet-couplets";
+
+        couplets.forEach((couplet, index) => {
+          if (hiddenCouplets.has(index)) return;
+
+          const coupletRow = document.createElement("div");
+          coupletRow.className = "sheet-couplet";
+
+          const coupletText = document.createElement("div");
+          coupletText.className = "sheet-couplet-text";
+          coupletText.innerHTML = `<strong>Couplet ${index + 1}</strong><br>${escapeHtml(couplet).replace(/\n/g, "<br>")}`;
+
+          const removeCouplet = document.createElement("button");
+          removeCouplet.type = "button";
+          removeCouplet.className = "sheet-couplet-remove";
+          removeCouplet.textContent = "−";
+          removeCouplet.title = "Retirer ce couplet de la feuille";
+          removeCouplet.addEventListener("click", () => toggleCoupletInSheet(section, id, index));
+
+          coupletRow.appendChild(coupletText);
+          coupletRow.appendChild(removeCouplet);
+          coupletsWrap.appendChild(coupletRow);
+        });
+
+        item.appendChild(coupletsWrap);
+      } else if (!refrain) {
+        const fullText = getFullText(chant);
+        if (fullText) {
+          const fallback = document.createElement("div");
+          fallback.className = "sheet-chant-fulltext";
+          fallback.innerHTML = escapeHtml(fullText).replace(/\n/g, "<br>");
+          item.appendChild(fallback);
+        }
+      }
+
       block.appendChild(item);
-    });
+    }
 
     content.appendChild(block);
   }
 
-  if (!content.children.length) {
+  const hasAnySelection = sections.some((section) => {
+    const ids = Array.isArray(state.selectedBySection[section]) ? state.selectedBySection[section] : [];
+    return ids.length > 0;
+  });
+
+  if (!hasAnySelection) {
     content.innerHTML = `<div class="sheet-empty">La feuille de messe se construira ici au fur et à mesure.</div>`;
   }
 }
