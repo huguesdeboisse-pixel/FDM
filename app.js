@@ -3,8 +3,8 @@
    Version adaptée au rendu A4 allégé
    ========================================================= */
 
-const STORAGE_KEY_GLOBAL = "fdm_global_v6";
-const STORAGE_KEY_RITE_PREFIX = "fdm_rite_v6_";
+const STORAGE_KEY_GLOBAL = "fdm_global_v7";
+const STORAGE_KEY_RITE_PREFIX = "fdm_rite_v7_";
 
 const SECTIONS = {
   ordinaire: [
@@ -69,6 +69,7 @@ const state = {
 
   selectedCarnets: [],
   availableCarnets: [],
+  carnetSearch: "",
 
   suggestionOffsets: {},
   hiddenCoupletsBySection: {},
@@ -438,6 +439,14 @@ function bindEvents() {
   if (dateInput) {
     dateInput.addEventListener("change", onDateChange);
     dateInput.addEventListener("input", onDateChange);
+    dateInput.addEventListener("click", (event) => {
+      event.stopPropagation();
+      try {
+        if (typeof dateInput.showPicker === "function") {
+          dateInput.showPicker();
+        }
+      } catch (error) {}
+    });
   }
 
   bindDateCard();
@@ -458,6 +467,34 @@ function bindEvents() {
       saveCurrentRiteState();
       saveGlobalState();
       renderSheet();
+    });
+  }
+
+  const searchCarnet = byId("searchCarnet");
+  if (searchCarnet) {
+    searchCarnet.addEventListener("input", (event) => {
+      state.carnetSearch = safeText(event.target.value);
+      renderCarnetsList();
+    });
+  }
+
+  const selectAllCarnets = byId("selectAllCarnets");
+  if (selectAllCarnets) {
+    selectAllCarnets.addEventListener("click", () => {
+      state.selectedCarnets = [...state.availableCarnets];
+      saveGlobalState();
+      renderCarnetsList();
+      renderSuggestions();
+    });
+  }
+
+  const clearCarnetsSelection = byId("clearCarnetsSelection");
+  if (clearCarnetsSelection) {
+    clearCarnetsSelection.addEventListener("click", () => {
+      state.selectedCarnets = [];
+      saveGlobalState();
+      renderCarnetsList();
+      renderSuggestions();
     });
   }
 
@@ -533,7 +570,11 @@ function bindDateCard() {
   };
 
   card.addEventListener("click", (event) => {
-    if (event.target === input) return;
+    event.preventDefault();
+    openPicker();
+  });
+
+  card.addEventListener("pointerdown", () => {
     openPicker();
   });
 
@@ -723,13 +764,73 @@ function goToSection(index) {
 }
 
 /* ===============================
+   CARNETS
+================================ */
+
+function toggleCarnetSelection(carnetName) {
+  if (!carnetName) return;
+
+  if (state.selectedCarnets.includes(carnetName)) {
+    state.selectedCarnets = state.selectedCarnets.filter((name) => name !== carnetName);
+  } else {
+    state.selectedCarnets = uniqueArray([...state.selectedCarnets, carnetName]);
+  }
+
+  saveGlobalState();
+  renderCarnetsList();
+  renderSuggestions();
+}
+
+function getFilteredCarnetsList() {
+  const query = normalize(state.carnetSearch);
+  if (!query) return state.availableCarnets;
+
+  return state.availableCarnets.filter((name) => normalize(name).includes(query));
+}
+
+function renderCarnetsList() {
+  const container = byId("carnetsList");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  const carnets = getFilteredCarnetsList();
+
+  if (!carnets.length) {
+    const empty = document.createElement("div");
+    empty.className = "carnets-empty";
+    empty.textContent = "Aucun carnet trouvé.";
+    container.appendChild(empty);
+    return;
+  }
+
+  for (const carnet of carnets) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "carnet-item";
+
+    if (state.selectedCarnets.includes(carnet)) {
+      button.classList.add("active");
+    }
+
+    button.innerHTML = `
+      <span class="carnet-item-name">${escapeHtml(carnet)}</span>
+      <span class="carnet-item-check">${state.selectedCarnets.includes(carnet) ? "✓" : ""}</span>
+    `;
+
+    button.addEventListener("click", () => toggleCarnetSelection(carnet));
+    container.appendChild(button);
+  }
+}
+
+/* ===============================
    FILTRAGE DES CHANTS
 ================================ */
 
 function getFilteredChantsBase() {
   let base = [...state.chants];
 
-  if (state.selectedCarnets.length > 0) {
+  if (state.selectedCarnets.length > 0 && state.selectedCarnets.length < state.availableCarnets.length) {
     base = base.filter((chant) => {
       const sources = uniqueArray([
         chant?.carnet,
@@ -1183,6 +1284,7 @@ function render() {
   renderSectionTitle();
   renderSummary();
   renderSectionsSummary();
+  renderCarnetsList();
   renderSuggestions();
   renderSheet();
   renderNavButtons();
@@ -1396,7 +1498,6 @@ function renderSheet() {
   });
 
   if (!filledSections.length) {
-    content.innerHTML = `<div class="sheet-empty">La feuille de messe se construira ici au fur et à mesure.</div>`;
     return;
   }
 
@@ -1404,6 +1505,7 @@ function renderSheet() {
     ensureSectionState(section);
 
     const ids = Array.isArray(state.selectedBySection[section]) ? state.selectedBySection[section] : [];
+    const firstChant = ids.length ? getChantById(ids[0]) : null;
 
     const block = document.createElement("div");
     block.className = "sheet-section";
@@ -1434,14 +1536,17 @@ function renderSheet() {
     header.className = "sheet-section-header";
 
     const h3 = document.createElement("h3");
-    h3.textContent = section;
-    header.appendChild(h3);
+    h3.innerHTML = `
+      <span class="sheet-section-name">${escapeHtml(section)}</span>
+      ${firstChant ? `<span class="sheet-section-first-chant"> — ${escapeHtml(firstChant.titre || "Sans titre")}</span>` : ""}
+    `;
 
+    header.appendChild(h3);
     block.appendChild(header);
 
-    for (const id of ids) {
+    ids.forEach((id, index) => {
       const chant = getChantById(id);
-      if (!chant) continue;
+      if (!chant) return;
 
       const item = document.createElement("div");
       item.className = "sheet-chant-item sheet-chant-item--plain";
@@ -1465,12 +1570,21 @@ function renderSheet() {
         qsa(".drop-target").forEach((el) => el.classList.remove("drop-target"));
       });
 
+      const showInlineHeaderTitle = index !== 0;
+
       const topRow = document.createElement("div");
       topRow.className = "sheet-chant-top";
 
-      const titleZone = document.createElement("div");
-      titleZone.className = "sheet-chant-title";
-      titleZone.textContent = chant.titre || "Sans titre";
+      if (showInlineHeaderTitle) {
+        const titleZone = document.createElement("div");
+        titleZone.className = "sheet-chant-title";
+        titleZone.textContent = chant.titre || "Sans titre";
+        topRow.appendChild(titleZone);
+      } else {
+        const spacer = document.createElement("div");
+        spacer.style.flex = "1";
+        topRow.appendChild(spacer);
+      }
 
       const actions = document.createElement("div");
       actions.className = "sheet-chant-actions";
@@ -1482,7 +1596,6 @@ function renderSheet() {
       remove.addEventListener("click", () => removeChantFromSection(section, id));
 
       actions.appendChild(remove);
-      topRow.appendChild(titleZone);
       topRow.appendChild(actions);
       item.appendChild(topRow);
 
@@ -1499,14 +1612,14 @@ function renderSheet() {
 
       if (couplets.length) {
         const visibleCouplets = couplets
-          .map((couplet, index) => ({ couplet, index }))
-          .filter(({ index }) => !hiddenCouplets.has(index));
+          .map((couplet, coupletIndex) => ({ couplet, coupletIndex }))
+          .filter(({ coupletIndex }) => !hiddenCouplets.has(coupletIndex));
 
         if (visibleCouplets.length) {
           const coupletsWrap = document.createElement("div");
           coupletsWrap.className = "sheet-couplets-grid";
 
-          visibleCouplets.forEach(({ couplet, index }) => {
+          visibleCouplets.forEach(({ couplet, coupletIndex }) => {
             const coupletRow = document.createElement("div");
             coupletRow.className = "sheet-couplet sheet-couplet--plain";
 
@@ -1519,7 +1632,7 @@ function renderSheet() {
             removeCouplet.className = "sheet-couplet-remove";
             removeCouplet.textContent = "−";
             removeCouplet.title = "Retirer ce couplet de la feuille";
-            removeCouplet.addEventListener("click", () => toggleCoupletInSheet(section, id, index));
+            removeCouplet.addEventListener("click", () => toggleCoupletInSheet(section, id, coupletIndex));
 
             coupletRow.appendChild(coupletText);
             coupletRow.appendChild(removeCouplet);
@@ -1539,7 +1652,7 @@ function renderSheet() {
       }
 
       block.appendChild(item);
-    }
+    });
 
     content.appendChild(block);
   }
