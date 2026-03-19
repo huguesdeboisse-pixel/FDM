@@ -1,10 +1,10 @@
 /* =========================================================
    FEUILLE DE MESSE - APP.JS
-   Version adaptée au nouvel index.html
+   Version adaptée au rendu A4 allégé
    ========================================================= */
 
-const STORAGE_KEY_GLOBAL = "fdm_global_v5";
-const STORAGE_KEY_RITE_PREFIX = "fdm_rite_v5_";
+const STORAGE_KEY_GLOBAL = "fdm_global_v6";
+const STORAGE_KEY_RITE_PREFIX = "fdm_rite_v6_";
 
 const SECTIONS = {
   ordinaire: [
@@ -73,6 +73,8 @@ const state = {
   suggestionOffsets: {},
   hiddenCoupletsBySection: {},
 
+  parishName: "",
+
   drag: {
     chantId: null,
     fromSection: null
@@ -138,6 +140,17 @@ function fromISODate(isoDate) {
 function formatDateFr(isoDate) {
   const date = fromISODate(isoDate);
   return date ? date.toLocaleDateString("fr-FR") : "Non renseignée";
+}
+
+function formatDateFrLong(isoDate) {
+  const date = fromISODate(isoDate);
+  if (!date) return "";
+  return date.toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric"
+  });
 }
 
 function getNextSundayISO() {
@@ -240,7 +253,8 @@ function loadGlobalState() {
     likes: {},
     selectedCarnets: [],
     lastDate: "",
-    lastRite: ""
+    lastRite: "",
+    parishName: ""
   });
 }
 
@@ -249,7 +263,8 @@ function saveGlobalState() {
     likes: state.likes,
     selectedCarnets: state.selectedCarnets,
     lastDate: state.date,
-    lastRite: state.rite
+    lastRite: state.rite,
+    parishName: state.parishName
   });
 }
 
@@ -265,7 +280,8 @@ function saveRiteState(rite) {
     selectedBySection: state.selectedBySection,
     visitedSections: state.visitedSections,
     suggestionOffsets: state.suggestionOffsets,
-    hiddenCoupletsBySection: state.hiddenCoupletsBySection
+    hiddenCoupletsBySection: state.hiddenCoupletsBySection,
+    parishName: state.parishName
   });
 }
 
@@ -275,6 +291,7 @@ function restoreLocalState() {
   state.selectedCarnets = globalState?.selectedCarnets || [];
   state.date = globalState?.lastDate || "";
   state.rite = globalState?.lastRite || "";
+  state.parishName = globalState?.parishName || "";
 }
 
 /* ===============================
@@ -377,8 +394,9 @@ async function init() {
     }
 
     syncDateInput();
-    await loadChants();
+    syncParishInput();
 
+    await loadChants();
     bindEvents();
 
     if (state.rite && SECTIONS[state.rite]) {
@@ -390,11 +408,13 @@ async function init() {
         state.visitedSections = saved.visitedSections || [];
         state.suggestionOffsets = saved.suggestionOffsets || {};
         state.hiddenCoupletsBySection = saved.hiddenCoupletsBySection || {};
+        state.parishName = saved.parishName || state.parishName || "";
       } else {
         resetRiteState(state.rite);
       }
 
       syncDateInput();
+      syncParishInput();
       updateLiturgicalInfo();
       render();
       showScreen(2);
@@ -425,6 +445,21 @@ function bindEvents() {
   qsa("[data-rite]").forEach((button) => {
     button.addEventListener("click", () => onRiteSelect(button.dataset.rite));
   });
+
+  const parishInput =
+    byId("parishInput") ||
+    byId("paroisseInput") ||
+    byId("paroisse") ||
+    byId("nomParoisse");
+
+  if (parishInput) {
+    parishInput.addEventListener("input", (event) => {
+      state.parishName = safeText(event.target.value).trim();
+      saveCurrentRiteState();
+      saveGlobalState();
+      renderSheet();
+    });
+  }
 
   const prevButton = byId("prev");
   if (prevButton) {
@@ -569,6 +604,7 @@ function onRiteSelect(rite) {
   }
 
   syncDateInput();
+  syncParishInput();
   updateLiturgicalInfo();
   saveCurrentRiteState();
   saveGlobalState();
@@ -585,6 +621,7 @@ function restoreRiteState(rite) {
   state.visitedSections = saved?.visitedSections || [];
   state.suggestionOffsets = saved?.suggestionOffsets || {};
   state.hiddenCoupletsBySection = saved?.hiddenCoupletsBySection || {};
+  state.parishName = saved?.parishName || state.parishName || "";
 
   for (const section of SECTIONS[rite]) {
     ensureSectionState(section);
@@ -613,13 +650,25 @@ function saveCurrentRiteState() {
 }
 
 /* ===============================
-   DATE
+   DATE / PAROISSE
 ================================ */
 
 function syncDateInput() {
   const input = byId("dateInput");
   if (input) {
     input.value = state.date || "";
+  }
+}
+
+function syncParishInput() {
+  const parishInput =
+    byId("parishInput") ||
+    byId("paroisseInput") ||
+    byId("paroisse") ||
+    byId("nomParoisse");
+
+  if (parishInput) {
+    parishInput.value = state.parishName || "";
   }
 }
 
@@ -1306,20 +1355,52 @@ function renderSheet() {
   const subtitleEl = byId("sheetSubtitle");
   const content = byId("sheetContent");
 
+  const parishDisplay =
+    byId("sheetParish") ||
+    byId("parishDisplay") ||
+    byId("sheetParishName");
+
+  const dateDisplay =
+    byId("sheetDateLong") ||
+    byId("sheetDateDisplay") ||
+    byId("sheetDate");
+
+  if (parishDisplay) {
+    const parish = safeText(state.parishName).trim();
+    parishDisplay.textContent = parish;
+    parishDisplay.style.display = parish ? "" : "none";
+  }
+
   if (titleEl) {
     titleEl.textContent = state.liturgicalInfo?.display?.title || "";
   }
 
   if (subtitleEl) {
-    subtitleEl.textContent = state.liturgicalInfo?.display?.subtitle || "";
+    subtitleEl.textContent = "";
+    subtitleEl.style.display = "none";
+  }
+
+  if (dateDisplay) {
+    const longDate = formatDateFrLong(state.date);
+    dateDisplay.textContent = longDate ? longDate.charAt(0).toUpperCase() + longDate.slice(1) : "";
+    dateDisplay.style.display = longDate ? "" : "none";
   }
 
   if (!content) return;
   content.innerHTML = "";
 
   const sections = getSectionsForCurrentRite();
+  const filledSections = sections.filter((section) => {
+    const ids = Array.isArray(state.selectedBySection[section]) ? state.selectedBySection[section] : [];
+    return ids.length > 0;
+  });
 
-  for (const section of sections) {
+  if (!filledSections.length) {
+    content.innerHTML = `<div class="sheet-empty">La feuille de messe se construira ici au fur et à mesure.</div>`;
+    return;
+  }
+
+  for (const section of filledSections) {
     ensureSectionState(section);
 
     const ids = Array.isArray(state.selectedBySection[section]) ? state.selectedBySection[section] : [];
@@ -1358,19 +1439,12 @@ function renderSheet() {
 
     block.appendChild(header);
 
-    if (!ids.length) {
-      const emptyDrop = document.createElement("div");
-      emptyDrop.className = "sheet-dropzone-empty";
-      emptyDrop.textContent = "Déposer un chant ici";
-      block.appendChild(emptyDrop);
-    }
-
     for (const id of ids) {
       const chant = getChantById(id);
       if (!chant) continue;
 
       const item = document.createElement("div");
-      item.className = "sheet-chant-item";
+      item.className = "sheet-chant-item sheet-chant-item--plain";
       item.draggable = true;
       item.dataset.section = section;
       item.dataset.chantId = String(id);
@@ -1410,14 +1484,13 @@ function renderSheet() {
       actions.appendChild(remove);
       topRow.appendChild(titleZone);
       topRow.appendChild(actions);
-
       item.appendChild(topRow);
 
       const refrain = getRefrainText(chant);
       if (refrain) {
         const refrainEl = document.createElement("div");
         refrainEl.className = "sheet-chant-refrain";
-        refrainEl.innerHTML = `<strong>Refrain</strong><br>${escapeHtml(refrain).replace(/\n/g, "<br>")}`;
+        refrainEl.innerHTML = `<strong>${escapeHtml(refrain).replace(/\n/g, "<br>")}</strong>`;
         item.appendChild(refrainEl);
       }
 
@@ -1425,32 +1498,36 @@ function renderSheet() {
       const hiddenCouplets = new Set(getHiddenCouplets(section, id));
 
       if (couplets.length) {
-        const coupletsWrap = document.createElement("div");
-        coupletsWrap.className = "sheet-couplets";
+        const visibleCouplets = couplets
+          .map((couplet, index) => ({ couplet, index }))
+          .filter(({ index }) => !hiddenCouplets.has(index));
 
-        couplets.forEach((couplet, index) => {
-          if (hiddenCouplets.has(index)) return;
+        if (visibleCouplets.length) {
+          const coupletsWrap = document.createElement("div");
+          coupletsWrap.className = "sheet-couplets-grid";
 
-          const coupletRow = document.createElement("div");
-          coupletRow.className = "sheet-couplet";
+          visibleCouplets.forEach(({ couplet, index }) => {
+            const coupletRow = document.createElement("div");
+            coupletRow.className = "sheet-couplet sheet-couplet--plain";
 
-          const coupletText = document.createElement("div");
-          coupletText.className = "sheet-couplet-text";
-          coupletText.innerHTML = `<strong>Couplet ${index + 1}</strong><br>${escapeHtml(couplet).replace(/\n/g, "<br>")}`;
+            const coupletText = document.createElement("div");
+            coupletText.className = "sheet-couplet-text";
+            coupletText.innerHTML = escapeHtml(couplet).replace(/\n/g, "<br>");
 
-          const removeCouplet = document.createElement("button");
-          removeCouplet.type = "button";
-          removeCouplet.className = "sheet-couplet-remove";
-          removeCouplet.textContent = "−";
-          removeCouplet.title = "Retirer ce couplet de la feuille";
-          removeCouplet.addEventListener("click", () => toggleCoupletInSheet(section, id, index));
+            const removeCouplet = document.createElement("button");
+            removeCouplet.type = "button";
+            removeCouplet.className = "sheet-couplet-remove";
+            removeCouplet.textContent = "−";
+            removeCouplet.title = "Retirer ce couplet de la feuille";
+            removeCouplet.addEventListener("click", () => toggleCoupletInSheet(section, id, index));
 
-          coupletRow.appendChild(coupletText);
-          coupletRow.appendChild(removeCouplet);
-          coupletsWrap.appendChild(coupletRow);
-        });
+            coupletRow.appendChild(coupletText);
+            coupletRow.appendChild(removeCouplet);
+            coupletsWrap.appendChild(coupletRow);
+          });
 
-        item.appendChild(coupletsWrap);
+          item.appendChild(coupletsWrap);
+        }
       } else if (!refrain) {
         const fullText = getFullText(chant);
         if (fullText) {
@@ -1465,15 +1542,6 @@ function renderSheet() {
     }
 
     content.appendChild(block);
-  }
-
-  const hasAnySelection = sections.some((section) => {
-    const ids = Array.isArray(state.selectedBySection[section]) ? state.selectedBySection[section] : [];
-    return ids.length > 0;
-  });
-
-  if (!hasAnySelection) {
-    content.innerHTML = `<div class="sheet-empty">La feuille de messe se construira ici au fur et à mesure.</div>`;
   }
 }
 
